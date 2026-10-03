@@ -1,0 +1,541 @@
+// IT'S JUST MINESWEEPER - renderer: a pixel-honest Windows 98 desktop that slowly goes wrong.
+(function (G) {
+'use strict';
+const SIM = G.SIM;
+const W = 1280, H = 720, TASK = 38;
+const TAU = Math.PI * 2;
+const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+const lerp = (a, b, t) => a + (b - a) * t;
+const UI = "bold 15px Tahoma, Verdana, 'Segoe UI', sans-serif";
+const NUMC = ['', '#0000ff', '#008000', '#ff0000', '#000080', '#800000', '#008080', '#000000', '#808080'];
+const DESK = ['#008080', '#0b3a44', '#3a1016', '#23233a', '#1e0808', '#050203'];
+
+const R = {
+  mouse: { x: -100, y: -100, touch: false, down: false }, cursor: { x: -100, y: -100 },
+  T: 0, fx: [], shake: 0, flash: 0, flashCol: '#fff', scare: 0, scareBig: false, glitch: 0, beatT: 0, beatN: 0, beatHover: -1,
+  onBeat: null, lastLevel: -1, blinkDark: 0, deathsHere: 0,
+};
+
+// ---------- layout (shared with input) ----------
+function tileSize(Lv) {
+  return Math.floor(Math.min(470 / Lv.h, 640 / Lv.w) / 2) * 2;
+}
+R.layout = function (S) {
+  const Lv = SIM.LEVELS[S.level];
+  const T = tileSize(Lv);
+  const bw = Lv.w * T, bh = Lv.h * T;
+  const ww = bw + 2 * 20, wh = 30 + 22 + 78 + bh + 20 + 10;
+  const wx = Math.round((W - ww) / 2), wy = Math.round((H - TASK - wh) / 2);
+  const bx = wx + 20, by = wy + 30 + 22 + 78;
+  const smiley = { x: wx + ww / 2 - 28, y: wy + 30 + 22 + 13, w: 56, h: 56 };
+  return { T, bw, bh, ww, wh, wx, wy, bx, by, smiley, cx: wx + ww / 2 };
+};
+R.tileAt = function (S, x, y) {
+  const g = R.layout(S), B = S.B;
+  const tx = Math.floor((x - g.bx) / g.T), ty = Math.floor((y - g.by) / g.T);
+  if (tx < 0 || ty < 0 || tx >= B.w || ty >= B.h) return -1;
+  const i = ty * B.w + tx;
+  return B.mask[i] ? i : -1;
+};
+R.inSmiley = function (S, x, y) { const s = R.layout(S).smiley; return x >= s.x && x <= s.x + s.w && y >= s.y && y <= s.y + s.h; };
+R.dialogRect = function () { const w = 400, h = 170; return { x: (W - w) / 2, y: (H - TASK - h) / 2 - 10, w, h, ok: { x: W / 2 - 50, y: (H - TASK - h) / 2 - 10 + h - 48, w: 100, h: 32 } }; };
+
+// ---------- primitives ----------
+function bevel(ctx, x, y, w, h, raised, t) {
+  t = t || 2;
+  ctx.fillStyle = '#c0c0c0'; ctx.fillRect(x, y, w, h);
+  const lt = raised ? '#ffffff' : '#808080', dk = raised ? '#808080' : '#ffffff';
+  ctx.fillStyle = lt; ctx.fillRect(x, y, w, t); ctx.fillRect(x, y, t, h);
+  ctx.fillStyle = dk; ctx.fillRect(x, y + h - t, w, t); ctx.fillRect(x + w - t, y, t, h);
+  if (raised) { ctx.fillStyle = '#000'; ctx.fillRect(x, y + h - 1, w, 1); ctx.fillRect(x + w - 1, y, 1, h); }
+}
+function sunken(ctx, x, y, w, h, t) {
+  t = t || 3;
+  ctx.fillStyle = '#808080'; ctx.fillRect(x - t, y - t, w + 2 * t, t); ctx.fillRect(x - t, y - t, t, h + 2 * t);
+  ctx.fillStyle = '#ffffff'; ctx.fillRect(x - t, y + h, w + 2 * t, t); ctx.fillRect(x + w, y - t, t, h + 2 * t);
+}
+function txt(ctx, s, x, y, col, font, align) { ctx.font = font || UI; ctx.fillStyle = col; ctx.textAlign = align || 'left'; ctx.textBaseline = 'middle'; ctx.fillText(s, x, y); }
+// 7-segment LED
+const SEG = { 0: 'abcdef', 1: 'bc', 2: 'abdeg', 3: 'abcdg', 4: 'bcfg', 5: 'acdfg', 6: 'acdefg', 7: 'abc', 8: 'abcdefg', 9: 'abcdfg', '-': 'g' };
+function led(ctx, x, y, val, glitch) {
+  ctx.fillStyle = '#000'; ctx.fillRect(x, y, 78, 46);
+  let s = typeof val === 'string' ? val : (val < 0 ? '-' + String(Math.min(99, -val)).padStart(2, '0') : String(Math.min(999, Math.floor(val))).padStart(3, '0'));
+  for (let k = 0; k < 3; k++) {
+    const d = s[k], ox = x + 4 + k * 25, oy = y + 4;
+    const on = SEG[d] || '';
+    const seg = (c, sx, sy, w, h) => { ctx.fillStyle = on.includes(c) ? (glitch && Math.random() < 0.1 ? '#600' : '#ff0000') : '#3a0000'; ctx.fillRect(ox + sx, oy + sy, w, h); };
+    seg('a', 3, 0, 15, 3); seg('b', 18, 3, 3, 16); seg('c', 18, 21, 3, 16); seg('d', 3, 37, 15, 3); seg('e', 0, 21, 3, 16); seg('f', 0, 3, 3, 16); seg('g', 3, 18, 15, 3);
+  }
+}
+function flagIcon(ctx, x, y, T, alpha) {
+  ctx.save(); ctx.globalAlpha = alpha == null ? 1 : alpha;
+  const u = T / 16;
+  ctx.fillStyle = '#000'; ctx.fillRect(x + 4 * u, y + 11 * u, 8 * u, 2 * u); ctx.fillRect(x + 6 * u, y + 10 * u, 4 * u, 1 * u); ctx.fillRect(x + 8 * u, y + 3 * u, 1.2 * u, 8 * u);
+  ctx.fillStyle = '#ff0000'; ctx.beginPath(); ctx.moveTo(x + 9 * u, y + 2.5 * u); ctx.lineTo(x + 3.5 * u, y + 5 * u); ctx.lineTo(x + 9 * u, y + 7.5 * u); ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+function mineIcon(ctx, x, y, T, eye, look) {
+  const u = T / 16, cx = x + 8 * u, cy = y + 8 * u;
+  if (eye) {
+    ctx.fillStyle = '#f4eee4'; ctx.beginPath(); ctx.ellipse(cx, cy, 6 * u, 4.2 * u, 0, 0, TAU); ctx.fill();
+    ctx.strokeStyle = '#000'; ctx.lineWidth = u; ctx.stroke();
+    const lx = clamp(look.x, -1, 1) * 2.4 * u, ly = clamp(look.y, -1, 1) * 1.2 * u;
+    ctx.fillStyle = '#b00000'; ctx.beginPath(); ctx.arc(cx + lx, cy + ly, 2.6 * u, 0, TAU); ctx.fill();
+    ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(cx + lx, cy + ly, 1.2 * u, 0, TAU); ctx.fill();
+    return;
+  }
+  ctx.fillStyle = '#000';
+  ctx.fillRect(cx - 0.6 * u, y + 2 * u, 1.2 * u, 12 * u); ctx.fillRect(x + 2 * u, cy - 0.6 * u, 12 * u, 1.2 * u);
+  ctx.save(); ctx.translate(cx, cy); ctx.rotate(Math.PI / 4); ctx.fillRect(-0.6 * u, -5 * u, 1.2 * u, 10 * u); ctx.fillRect(-5 * u, -0.6 * u, 10 * u, 1.2 * u); ctx.restore();
+  ctx.beginPath(); ctx.arc(cx, cy, 4.3 * u, 0, TAU); ctx.fill();
+  ctx.fillStyle = '#fff'; ctx.fillRect(cx - 2.4 * u, cy - 2.4 * u, 1.8 * u, 1.8 * u);
+}
+
+// ---------- the smiley ----------
+function smileyFace(ctx, cx, cy, r, mood, look, S) {
+  ctx.save();
+  ctx.fillStyle = mood === 'final' ? '#ffe600' : '#ffff00';
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, TAU); ctx.fill();
+  ctx.lineWidth = Math.max(1.5, r / 9); ctx.strokeStyle = '#000'; ctx.stroke();
+  const ex = r * 0.36, ey = -r * 0.22, er = r * 0.12;
+  const lx = clamp(look.x, -1, 1) * er * 0.7, ly = clamp(look.y, -1, 1) * er * 0.6;
+  ctx.fillStyle = '#000'; ctx.strokeStyle = '#000'; ctx.lineWidth = Math.max(1.5, r / 10);
+  if (mood === 'dead') {
+    for (const s of [-1, 1]) { ctx.beginPath(); ctx.moveTo(cx + s * ex - er, cy + ey - er); ctx.lineTo(cx + s * ex + er, cy + ey + er); ctx.moveTo(cx + s * ex + er, cy + ey - er); ctx.lineTo(cx + s * ex - er, cy + ey + er); ctx.stroke(); }
+  } else if (mood === 'cool') {
+    ctx.fillRect(cx - r * 0.62, cy + ey - er, r * 1.24, er * 2); ctx.fillRect(cx - r * 0.55, cy + ey - er, r * 0.45, er * 2.6); ctx.fillRect(cx + r * 0.1, cy + ey - er, r * 0.45, er * 2.6);
+  } else if (mood === 'closed' || mood === 'blink') {
+    for (const s of [-1, 1]) { ctx.beginPath(); ctx.arc(cx + s * ex, cy + ey, er * 1.1, 0.2, Math.PI - 0.2); ctx.stroke(); }
+  } else if (mood === 'hollow' || mood === 'final') {
+    for (const s of [-1, 1]) { ctx.beginPath(); ctx.ellipse(cx + s * ex, cy + ey, er * 1.6, er * 2.1, 0, 0, TAU); ctx.fill(); }
+    ctx.fillStyle = '#ff2020';
+    for (const s of [-1, 1]) { ctx.beginPath(); ctx.arc(cx + s * ex + lx, cy + ey + ly, er * 0.45, 0, TAU); ctx.fill(); }
+  } else {
+    for (const s of [-1, 1]) { ctx.beginPath(); ctx.arc(cx + s * ex + lx, cy + ey + ly, er, 0, TAU); ctx.fill(); }
+  }
+  // mouth
+  ctx.lineWidth = Math.max(1.5, r / 9);
+  if (mood === 'ooh') { ctx.beginPath(); ctx.arc(cx, cy + r * 0.35, r * 0.16, 0, TAU); ctx.stroke(); }
+  else if (mood === 'dead') { ctx.beginPath(); ctx.arc(cx, cy + r * 0.62, r * 0.3, Math.PI + 0.4, -0.4); ctx.stroke(); }
+  else if (mood === 'teeth' || mood === 'hollow' || mood === 'blink' || mood === 'final') {
+    const mw = r * (mood === 'final' ? 0.78 : 0.62), my = cy + r * 0.3;
+    ctx.fillStyle = '#000'; ctx.beginPath(); ctx.moveTo(cx - mw, my - r * 0.08); ctx.quadraticCurveTo(cx, my + r * 0.62, cx + mw, my - r * 0.08); ctx.quadraticCurveTo(cx, my + r * 0.2, cx - mw, my - r * 0.08); ctx.fill();
+    ctx.fillStyle = '#fff';
+    const n = 7;
+    for (let k = 0; k < n; k++) { const u = (k + 0.5) / n, tx = cx - mw * 0.85 + u * mw * 1.7; const tyy = my + Math.sin(u * Math.PI) * r * 0.12; ctx.fillRect(tx - r * 0.05, tyy - r * 0.02, r * 0.1, r * 0.14); }
+  } else { ctx.beginPath(); ctx.arc(cx, cy + r * 0.05, r * 0.5, 0.35, Math.PI - 0.35); ctx.stroke(); }
+  ctx.restore();
+}
+function smileyMood(S) {
+  const lv = S.level;
+  if (S.phase === 'dead') return 'dead';
+  if (S.phase === 'won') return lv === 0 ? 'cool' : lv >= 3 ? 'teeth' : 'cool';
+  if (S.phase === 'final' || S.phase === 'ending') return 'final';
+  if (S.blinkWarn) return 'blink';
+  if (R.mouse.down && S.phase === 'play') return lv >= 4 ? 'teeth' : 'ooh';
+  if (lv >= 5) return 'hollow';
+  if (lv >= 4) return 'teeth';
+  return 'normal';
+}
+
+// ---------- desktop ----------
+function desktop(ctx, S) {
+  const lv = S ? S.level : 0;
+  ctx.fillStyle = DESK[lv] || '#000'; ctx.fillRect(0, 0, W, H);
+  // wallpaper text
+  ctx.save(); ctx.globalAlpha = lv === 0 ? 0.1 : 0.06 + lv * 0.02;
+  txt(ctx, lv >= 3 ? "it's not just minesweeper" : "it's just minesweeper", W - 30, H - TASK - 40, lv >= 3 ? '#ff4040' : '#ffffff', "bold 34px Tahoma, Verdana, sans-serif", 'right');
+  ctx.restore();
+  if (S && G.DESK) G.DESK.drawIcons(ctx, S);
+}
+function taskbar(ctx, S) {
+  const y = H - TASK;
+  bevel(ctx, 0, y, W, TASK, true);
+  const DK = G.DESK;
+  bevel(ctx, 4, y + 5, 86, TASK - 10, !(DK && DK.start));
+  // windows logo
+  const lx = 12, ly = y + 11;
+  [['#ff0000', 0, 0], ['#00a000', 8, 0], ['#0000ff', 0, 8], ['#ffd000', 8, 8]].forEach(([c, dx, dy]) => { ctx.fillStyle = c; ctx.fillRect(lx + dx, ly + dy, 7, 7); });
+  txt(ctx, 'Start', 34, y + TASK / 2, '#000', "bold 15px Tahoma, Verdana, sans-serif");
+  if (S && !(DK && DK.closed)) {
+    bevel(ctx, 100, y + 5, 230, TASK - 10, !!(DK && DK.min));
+    txt(ctx, SIM.LEVELS[S.level].title.slice(0, 26), 112, y + TASK / 2, '#000', "bold 14px Tahoma, Verdana, sans-serif");
+  }
+  bevel(ctx, W - 96, y + 5, 90, TASK - 10, false);
+  const d = new Date();
+  let clock = d.getHours() + ':' + String(d.getMinutes()).padStart(2, '0');
+  if (S && S.level >= 5) clock = '3:33';
+  txt(ctx, clock, W - 51, y + TASK / 2, '#000', "14px Tahoma, Verdana, sans-serif", 'center');
+}
+
+// ---------- the window ----------
+function windowFrame(ctx, S, g) {
+  const Lv = SIM.LEVELS[S.level];
+  bevel(ctx, g.wx, g.wy, g.ww, g.wh, true, 3);
+  // title bar
+  const gr = ctx.createLinearGradient(g.wx, 0, g.wx + g.ww, 0);
+  const red = S.level >= 4;
+  gr.addColorStop(0, red ? '#600000' : '#000080'); gr.addColorStop(1, red ? '#c02020' : '#1084d0');
+  ctx.fillStyle = gr; ctx.fillRect(g.wx + 4, g.wy + 4, g.ww - 8, 24);
+  mineIcon(ctx, g.wx + 8, g.wy + 6, 20, S.level >= 5, { x: 0, y: 0 });
+  let title = Lv.title;
+  if (R.glitch > 0 && Math.random() < 0.5) title = title.split('').map(c => Math.random() < 0.3 ? String.fromCharCode(33 + Math.random() * 90) : c).join('');
+  txt(ctx, title, g.wx + 32, g.wy + 16, '#fff', "bold 15px Tahoma, Verdana, sans-serif");
+  // buttons
+  const bx = g.wx + g.ww - 26;
+  for (let k = 0; k < 3; k++) { bevel(ctx, bx - k * 22, g.wy + 7, 18, 16, true); }
+  ctx.fillStyle = '#000';
+  ctx.fillRect(bx + 4, g.wy + 10, 10, 2); ctx.fillRect(bx + 4, g.wy + 19, 10, 2); // ×-ish
+  ctx.save(); ctx.translate(bx + 9, g.wy + 15); ctx.rotate(Math.PI / 4); ctx.fillRect(-6, -1, 12, 2); ctx.rotate(Math.PI / 2); ctx.fillRect(-6, -1, 12, 2); ctx.restore();
+  ctx.fillStyle = '#c0c0c0'; ctx.fillRect(bx + 3, g.wy + 9, 12, 3); ctx.fillRect(bx + 3, g.wy + 18, 12, 3);
+  ctx.save(); ctx.translate(bx + 9, g.wy + 15); ctx.fillStyle = '#000'; ctx.rotate(Math.PI / 4); ctx.fillRect(-5, -1, 10, 2); ctx.rotate(Math.PI / 2); ctx.fillRect(-5, -1, 10, 2); ctx.restore();
+  ctx.fillStyle = '#000'; ctx.fillRect(bx - 22 + 4, g.wy + 10, 10, 8); ctx.fillStyle = '#c0c0c0'; ctx.fillRect(bx - 22 + 5, g.wy + 12, 8, 5);
+  ctx.fillStyle = '#000'; ctx.fillRect(bx - 44 + 4, g.wy + 17, 9, 2);
+  // menu
+  txt(ctx, 'Game', g.wx + 12, g.wy + 41, '#000', "15px Tahoma, Verdana, sans-serif");
+  txt(ctx, 'Help', g.wx + 62, g.wy + 41, '#000', "15px Tahoma, Verdana, sans-serif");
+  // header panel
+  const hx = g.wx + 14, hy = g.wy + 58, hw = g.ww - 28, hh = 68;
+  sunken(ctx, hx, hy, hw, hh, 3);
+  ctx.fillStyle = '#c0c0c0'; ctx.fillRect(hx, hy, hw, hh);
+  const left = S.B.started ? SIM.flagsLeft(S) : S.B.m;
+  led(ctx, hx + 10, hy + 11, left, S.level >= 4);
+  let tv = S.timer;
+  led(ctx, hx + hw - 88, hy + 11, S.level >= 5 && S.phase === 'final' ? '666' : tv, S.level >= 4);
+  // smiley
+  const sm = g.smiley;
+  const pressed = R.smileyDown;
+  bevel(ctx, sm.x, sm.y, sm.w, sm.h, !pressed, 3);
+  // on the first board it only glances at you now and then
+  const look = S.level === 0 && (R.T % 11) > 0.9 ? { x: 0, y: 0 } : lookAt(sm.x + sm.w / 2, sm.y + sm.h / 2);
+  const final = S.phase === 'final';
+  const pulse = final ? 1 + Math.sin(R.T * 6) * 0.06 : 1;
+  smileyFace(ctx, sm.x + sm.w / 2 + (pressed ? 1 : 0), sm.y + sm.h / 2 + (pressed ? 1 : 0), 19 * pulse, smileyMood(S), look, S);
+  // board frame
+  sunken(ctx, g.bx, g.by, g.bw, g.bh, 4);
+}
+function lookAt(x, y) {
+  const c = R.cursor;
+  const dx = c.x - x, dy = c.y - y, d = Math.hypot(dx, dy) || 1;
+  return { x: dx / d * Math.min(1, d / 60), y: dy / d * Math.min(1, d / 60) };
+}
+
+function board(ctx, S, g) {
+  const B = S.B, T = g.T, Lv = SIM.LEVELS[S.level];
+  const hover = R.hoverTile;
+  const heart = Lv.twist === 'heart';
+  const eyes = S.level >= 1;
+  // the mirror board is drawn back to front; clicks land where you see them (main.js flips them back)
+  const mirror = Lv.twist === 'mirror';
+  ctx.save();
+  if (mirror) { ctx.translate(2 * g.cx, 0); ctx.scale(-1, 1); }
+  for (let y = 0; y < B.h; y++) for (let x = 0; x < B.w; x++) {
+    const i = y * B.w + x, px = g.bx + x * T, py = g.by + y * T;
+    if (!B.mask[i]) {
+      // the holes in the face: eyes and mouth
+      ctx.fillStyle = '#0a0000'; ctx.fillRect(px, py, T, T);
+      const gl = 0.25 + 0.2 * Math.sin(R.T * 3 + x * 0.7);
+      ctx.fillStyle = 'rgba(255,0,0,' + gl * (S.phase === 'final' ? 1.6 : 0.6) + ')'; ctx.fillRect(px + T * 0.3, py + T * 0.3, T * 0.4, T * 0.4);
+      continue;
+    }
+    if (!B.rev[i]) {
+      const press = R.mouse.down && hover === i && S.phase === 'play' && !B.flag[i];
+      if (press) { ctx.fillStyle = '#bdbdbd'; ctx.fillRect(px, py, T, T); ctx.fillStyle = '#7b7b7b'; ctx.fillRect(px, py, T, 1); ctx.fillRect(px, py, 1, T); }
+      else bevel(ctx, px, py, T, T, true, Math.max(2, T / 12));
+      if (S.phase === 'final' && B.faceAt && B.faceAt.includes(i)) {
+        // the cleared face: the mines that make it up open their eyes
+        ctx.fillStyle = 'rgba(90,0,0,' + (0.75 + 0.2 * Math.sin(R.T * 4 + i)) + ')'; ctx.fillRect(px + 1, py + 1, T - 2, T - 2);
+        mineIcon(ctx, px, py, T, true, lookAt(px + T / 2, py + T / 2));
+        continue;
+      }
+      if (B.flag[i]) flagIcon(ctx, px, py, T);
+      // something moved under here
+      if (B.flash[i] > 0) { ctx.save(); ctx.globalAlpha = B.flash[i] * 0.5; ctx.fillStyle = '#300'; ctx.fillRect(px + 2 + (Math.random() - 0.5) * 3 * B.flash[i], py + 2, T - 4, T - 4); ctx.restore(); }
+      if (S.hint === i) { ctx.save(); ctx.globalAlpha = 0.35 + 0.3 * Math.sin(R.T * 8); ctx.fillStyle = '#ffff60'; ctx.fillRect(px + 3, py + 3, T - 6, T - 6); ctx.restore(); }
+    } else {
+      ctx.fillStyle = B.boom === i ? '#ff0000' : '#bdbdbd'; ctx.fillRect(px, py, T, T);
+      ctx.fillStyle = '#7b7b7b'; ctx.fillRect(px, py, T, 1); ctx.fillRect(px, py, 1, T);
+      if (B.flash[i] > 0) { ctx.fillStyle = 'rgba(255,0,0,' + B.flash[i] * 0.55 + ')'; ctx.fillRect(px, py, T, T); }
+      if (B.mine[i]) {
+        if (B.flag[i] && S.phase !== 'dead') flagIcon(ctx, px, py, T);
+        else mineIcon(ctx, px, py, T, eyes && S.phase === 'dead', lookAt(px + T / 2, py + T / 2));
+      } else if (B.num[i] > 0) {
+        let n = B.num[i];
+        ctx.font = 'bold ' + Math.round(T * 0.66) + 'px Verdana, Tahoma, sans-serif';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillStyle = NUMC[n];
+        const jx = S.level >= 4 && Math.random() < 0.02 ? (Math.random() - 0.5) * 4 : 0;
+        // heart board: the numbers swell with the heartbeat
+        const beat = heart ? 1 + 0.08 * Math.pow(Math.max(0, Math.sin(R.T * 4.2)), 8) : 1;
+        if (beat > 1.001) { ctx.save(); ctx.translate(px + T / 2, py + T / 2); ctx.scale(beat, beat); ctx.fillText(String(n), jx, 1); ctx.restore(); }
+        else ctx.fillText(String(n), px + T / 2 + jx, py + T / 2 + 1);
+      }
+      if (B.flag[i] && !B.mine[i] && S.phase === 'dead') { flagIcon(ctx, px, py, T); ctx.strokeStyle = '#f00'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(px + 4, py + 4); ctx.lineTo(px + T - 4, py + T - 4); ctx.stroke(); }
+    }
+  }
+  if (heart) heartbeat(ctx, S, g);
+  ctx.restore();
+}
+
+// "heart" level: hover a number and it beats that many times
+function heartbeat(ctx, S, g) {
+  const B = S.B, T = g.T, i = R.hoverTile;
+  if (i !== R.beatHover) { R.beatHover = i; R.beatT = 0; }
+  const n = i >= 0 && B.rev[i] && !B.mine[i] ? B.num[i] : 0;
+  if (!n) return;
+  const cycle = 0.32 * n + 0.8;
+  const t = R.beatT % cycle;
+  const k = Math.floor(t / 0.32);
+  if (R.lastBeatK !== k + '_' + Math.floor(R.beatT / cycle) && k < n) { R.lastBeatK = k + '_' + Math.floor(R.beatT / cycle); if (R.onBeat) R.onBeat(k, n); }
+  const x = i % B.w, y = (i / B.w) | 0, cx = g.bx + x * T + T / 2, cy = g.by + y * T + T / 2;
+  for (let b = 0; b < n; b++) {
+    const age = t - b * 0.32;
+    if (age < 0 || age > 0.6) continue;
+    ctx.save(); ctx.globalAlpha = 1 - age / 0.6; ctx.strokeStyle = '#d00000'; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.arc(cx, cy, T * 0.2 + age * T * 1.4, 0, TAU); ctx.stroke(); ctx.restore();
+  }
+  // the tile itself throbs
+  const th = Math.max(0, 1 - (t % 0.32) / 0.2) * (k < n ? 1 : 0);
+  ctx.save(); ctx.globalAlpha = th * 0.6; ctx.fillStyle = '#c00000'; ctx.fillRect(g.bx + x * T + 3, g.by + y * T + 3, T - 6, T - 6); ctx.restore();
+  // beat pips: how many beats this tile makes (so it isn't audio-only)
+  for (let b = 0; b < n; b++) { ctx.fillStyle = b <= k && k < n ? '#d00000' : '#600'; ctx.beginPath(); ctx.arc(cx - (n - 1) * 5 + b * 10, cy - T * 0.62, 3.5, 0, TAU); ctx.fill(); }
+}
+
+// ---------- dialogs ----------
+function dialog(ctx, title, lines, icon, button, creepy) {
+  const d = R.dialogRect();
+  ctx.save();
+  if (creepy) ctx.translate((Math.random() - 0.5) * 2, (Math.random() - 0.5) * 2);
+  ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.fillRect(d.x + 6, d.y + 6, d.w, d.h);
+  bevel(ctx, d.x, d.y, d.w, d.h, true, 3);
+  const gr = ctx.createLinearGradient(d.x, 0, d.x + d.w, 0);
+  gr.addColorStop(0, creepy ? '#500000' : '#000080'); gr.addColorStop(1, creepy ? '#b01818' : '#1084d0');
+  ctx.fillStyle = gr; ctx.fillRect(d.x + 4, d.y + 4, d.w - 8, 24);
+  txt(ctx, title, d.x + 10, d.y + 16, '#fff', "bold 14px Tahoma, Verdana, sans-serif");
+  // icon
+  const ix = d.x + 44, iy = d.y + 74;
+  if (icon === 'info') { ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(ix, iy, 18, 0, TAU); ctx.fill(); ctx.strokeStyle = '#000080'; ctx.lineWidth = 2; ctx.stroke(); txt(ctx, 'i', ix, iy + 1, '#000080', "bold italic 24px Georgia, serif", 'center'); }
+  else if (icon === 'warn') { ctx.fillStyle = '#ffd800'; ctx.beginPath(); ctx.moveTo(ix, iy - 19); ctx.lineTo(ix + 20, iy + 16); ctx.lineTo(ix - 20, iy + 16); ctx.closePath(); ctx.fill(); ctx.strokeStyle = '#000'; ctx.lineWidth = 2; ctx.stroke(); txt(ctx, '!', ix, iy + 3, '#000', "bold 22px Tahoma, sans-serif", 'center'); }
+  else if (icon === 'face') smileyFace(ctx, ix, iy, 20, 'hollow', lookAt(ix, iy));
+  else { ctx.fillStyle = '#c00000'; ctx.beginPath(); ctx.arc(ix, iy, 18, 0, TAU); ctx.fill(); txt(ctx, '×', ix, iy + 1, '#fff', "bold 26px Tahoma, sans-serif", 'center'); }
+  lines.forEach((l, k) => txt(ctx, l, d.x + 80, d.y + 60 + k * 24, '#000', creepy ? "bold 16px Tahoma, Verdana, sans-serif" : "15px Tahoma, Verdana, sans-serif"));
+  if (button) {
+    const o = d.ok;
+    bevel(ctx, o.x, o.y, o.w, o.h, !R.okDown, 2);
+    ctx.strokeStyle = '#000'; ctx.lineWidth = 1; ctx.setLineDash([1, 2]); ctx.strokeRect(o.x + 4.5, o.y + 4.5, o.w - 9, o.h - 9); ctx.setLineDash([]);
+    txt(ctx, button, o.x + o.w / 2, o.y + o.h / 2, '#000', "15px Tahoma, Verdana, sans-serif", 'center');
+  }
+  ctx.restore();
+}
+
+// ---------- scares & effects ----------
+function jumpscare(ctx, S) {
+  const k = R.scare;               // 1 -> 0
+  const big = R.scareBig;
+  ctx.save();
+  ctx.fillStyle = Math.random() < 0.5 ? '#000' : '#300'; ctx.fillRect(0, 0, W, H);
+  const u = 1 - k;
+  const sc = big ? lerp(0.7, 2.2, Math.pow(u, 0.6)) : lerp(0.9, 1.3, u);
+  ctx.translate(W / 2 + (Math.random() - 0.5) * 30, H / 2 + (Math.random() - 0.5) * 30);
+  ctx.scale(sc, sc);
+  smileyFace(ctx, 0, 0, 170, 'hollow', { x: 0, y: 0 }, S);
+  ctx.restore();
+  // scanline tear
+  for (let i = 0; i < 8; i++) tear(ctx, Math.random() * H, 8, (Math.random() - 0.5) * 60);
+}
+// copy a horizontal slice of what's already drawn and shove it sideways
+function tear(ctx, y, h, dx) {
+  const d = R.dev || { s: 1, ox: 0, oy: 0 };
+  try { ctx.drawImage(ctx.canvas, d.ox, d.oy + y * d.s, W * d.s, h * d.s, dx, y, W, h); } catch (e) { }
+}
+function crt(ctx, S) {
+  const lv = S ? S.level : 0;
+  ctx.save();
+  ctx.globalAlpha = 0.05 + lv * 0.012;
+  ctx.fillStyle = '#000';
+  for (let y = 0; y < H; y += 3) ctx.fillRect(0, y, W, 1);
+  ctx.restore();
+  const g = ctx.createRadialGradient(W / 2, H / 2, 300, W / 2, H / 2, 800);
+  g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,' + (0.25 + lv * 0.08) + ')');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  if (R.glitch > 0) {
+    for (let i = 0; i < 6; i++) {
+      tear(ctx, Math.random() * H, 4 + Math.random() * 20, (Math.random() - 0.5) * 50 * R.glitch);
+    }
+  }
+}
+function night(ctx, S, g) {
+  // darkness with a torch where the cursor is
+  if (!R.dark) R.dark = R.mk(W, H);
+  const d = R.dark.getContext('2d');
+  d.setTransform(1, 0, 0, 1, 0, 0);
+  d.globalCompositeOperation = 'source-over';
+  d.clearRect(0, 0, W, H);
+  d.fillStyle = 'rgba(0,0,0,0.955)'; d.fillRect(0, 0, W, H);
+  d.globalCompositeOperation = 'destination-out';
+  const c = R.cursor, rad = R.mouse.touch ? 150 : 115;
+  const fl = 1 + Math.sin(R.T * 17) * 0.02 + (Math.random() - 0.5) * 0.03;
+  const gr = d.createRadialGradient(c.x, c.y, rad * 0.35, c.x, c.y, rad * fl);
+  gr.addColorStop(0, 'rgba(0,0,0,1)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
+  d.fillStyle = gr; d.beginPath(); d.arc(c.x, c.y, rad * fl, 0, TAU); d.fill();
+  // the smiley glows a little, so you can always find it
+  const sm = g.smiley;
+  const g2 = d.createRadialGradient(sm.x + 28, sm.y + 28, 5, sm.x + 28, sm.y + 28, 50);
+  g2.addColorStop(0, 'rgba(0,0,0,0.8)'); g2.addColorStop(1, 'rgba(0,0,0,0)');
+  d.fillStyle = g2; d.fillRect(sm.x - 30, sm.y - 30, 120, 120);
+  ctx.drawImage(R.dark, 0, 0, W, H);
+  // flags glow faintly in the dark
+  const B = S.B;
+  for (let i = 0; i < B.flag.length; i++) if (B.flag[i] && !B.rev[i]) { const x = i % B.w, y = (i / B.w) | 0; ctx.save(); ctx.globalAlpha = 0.35; flagIcon(ctx, g.bx + x * g.T, g.by + y * g.T, g.T); ctx.restore(); }
+}
+function cursor(ctx, S) {
+  if (R.mouse.touch || R.mouse.x < 0) return;
+  const c = R.cursor;
+  ctx.save(); ctx.translate(Math.round(c.x), Math.round(c.y));
+  ctx.fillStyle = '#fff'; ctx.strokeStyle = '#000'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, 22); ctx.lineTo(5, 17); ctx.lineTo(9, 26); ctx.lineTo(12, 25); ctx.lineTo(8, 16); ctx.lineTo(15, 16); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.restore();
+}
+function fx(ctx, dt) {
+  for (const p of R.fx) {
+    p.t += dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += (p.g || 0) * dt;
+    const a = 1 - p.t / p.life;
+    if (a <= 0) continue;
+    ctx.save(); ctx.globalAlpha = a;
+    if (p.k === 'chip') { ctx.fillStyle = p.col; ctx.fillRect(p.x, p.y, p.s, p.s); }
+    else if (p.k === 'text') { txt(ctx, p.s, p.x, p.y, p.col, p.font, 'center'); }
+    ctx.restore();
+  }
+  R.fx = R.fx.filter(p => p.t < p.life);
+}
+
+// ---------- events -> visuals ----------
+R.onEvent = function (e, S) {
+  const g = R.layout(S);
+  const at = i => [g.bx + (i % S.B.w) * g.T + g.T / 2, g.by + ((i / S.B.w) | 0) * g.T + g.T / 2];
+  switch (e.type) {
+    case 'open':
+      if (e.big) { R.shake = Math.max(R.shake, 2); }
+      for (const c of e.cells.slice(0, 40)) { const [x, y] = at(c); for (let k = 0; k < 2; k++) R.fx.push({ k: 'chip', x, y, vx: (Math.random() - 0.5) * 260, vy: -Math.random() * 260, g: 900, s: 3, col: Math.random() < 0.5 ? '#fff' : '#808080', t: 0, life: 0.5 }); }
+      break;
+    case 'boom': {
+      R.deathsHere++;
+      if (e.scare) { R.scare = 1; R.scareBig = R.deathsHere <= 1 || S.level >= 4; R.scareLen = R.scareBig ? 1.0 : 0.45; R.shake = 22; }
+      else { R.shake = 12; R.flash = 0.6; R.flashCol = '#fff'; }
+      break;
+    }
+    case 'level':
+      R.deathsHere = 0; R.glitch = e.level > 0 ? 1.2 : 0; R.flash = e.level > 0 ? 0.6 : 0; R.flashCol = '#000';
+      break;
+    case 'reset': R.glitch = Math.max(R.glitch, 0.2); break;
+    case 'win': R.flash = 0.3; R.flashCol = '#fff'; for (let k = 0; k < 60; k++) R.fx.push({ k: 'chip', x: g.cx, y: g.by, vx: (Math.random() - 0.5) * 700, vy: -Math.random() * 600, g: 700, s: 5, col: ['#ff0000', '#ffff00', '#0000ff', '#00a000'][k % 4], t: 0, life: 1.4 }); break;
+    case 'blinkWarn': R.blinkDark = 1; break;
+    case 'blink': R.blinkDark = 0; R.flash = 0.8; R.flashCol = '#000'; R.shake = e.moved ? 8 : 3; break;
+    case 'hint': break;
+    case 'finalStart': R.glitch = 1.5; R.shake = 10; break;
+    case 'ending': R.glitch = 2; R.flash = 1; R.flashCol = e.which === 'swept' ? '#fff' : '#000'; break;
+    case 'whisper': R.glitch = 0.6; break;
+    case 'loop': R.glitch = 1.5; break;
+  }
+};
+
+// ---------- main draw ----------
+R.draw = function (ctx, S, app, dt) {
+  R.T += dt; R.beatT += dt;
+  R.shake = Math.max(0, R.shake - dt * 40);
+  R.flash = Math.max(0, R.flash - dt * 1.8);
+  R.glitch = Math.max(0, R.glitch - dt);
+  if (R.scare > 0) R.scare = Math.max(0, R.scare - dt / (R.scareLen || 1));
+  R.cursor.x = R.mouse.x; R.cursor.y = R.mouse.y;
+  // the mirror board is drawn flipped, so the square under the cursor is the flipped one
+  const hx = S && SIM.LEVELS[S.level].twist === 'mirror' ? 2 * R.layout(S).cx - R.mouse.x : R.mouse.x;
+  R.hoverTile = S ? R.tileAt(S, hx, R.mouse.y) : -1;
+
+  ctx.save();
+  if (R.shake > 0) ctx.translate((Math.random() - 0.5) * R.shake, (Math.random() - 0.5) * R.shake);
+  desktop(ctx, S);
+  const DK = G.DESK;
+  if (S && S.phase !== 'ending' && (!DK || DK.visible())) {
+    const g = R.layout(S);
+    windowFrame(ctx, S, g);
+    board(ctx, S, g);
+    if (SIM.LEVELS[S.level].twist === 'night' && S.phase === 'play') night(ctx, S, g);
+    if (S.blinkWarn) { ctx.fillStyle = 'rgba(0,0,0,' + (0.25 + 0.25 * Math.sin(R.T * 20)) + ')'; ctx.fillRect(0, 0, W, H - TASK); }
+    if (S.level === 0 && !S.B.started && S.phase === 'play') {
+      const bob = Math.sin(R.T * 3) * 3;
+      const hx = g.wx + g.ww + 22, hy = g.by + 40 + bob;
+      ctx.fillStyle = '#ffffe1'; ctx.fillRect(hx, hy, 230, 70); ctx.strokeStyle = '#000'; ctx.lineWidth = 1; ctx.strokeRect(hx + 0.5, hy + 0.5, 230, 70);
+      ctx.beginPath(); ctx.moveTo(hx, hy + 18); ctx.lineTo(hx - 12, hy + 26); ctx.lineTo(hx, hy + 32); ctx.fillStyle = '#ffffe1'; ctx.fill();
+      txt(ctx, R.mouse.touch ? 'Tap a square to begin.' : 'Click a square to begin.', hx + 12, hy + 17, '#000', "bold 13px Tahoma, Verdana, sans-serif");
+      txt(ctx, 'Numbers = mines touching.', hx + 12, hy + 36, '#000', "13px Tahoma, Verdana, sans-serif");
+      txt(ctx, R.mouse.touch ? 'Hold to plant a flag.' : 'Right-click to plant a flag.', hx + 12, hy + 54, '#000', "13px Tahoma, Verdana, sans-serif");
+    }
+  }
+  if (S && DK && S.phase !== 'ending') DK.drawWins(ctx, S);
+  taskbar(ctx, S);
+  fx(ctx, dt);
+  if (S) overlays(ctx, S, dt);
+  if (S && DK) DK.drawTop(ctx, S);
+  ctx.restore();
+  if (S && DK) DK.drawShut(ctx, S);
+  if (!R.noCrt) crt(ctx, S);
+  if (R.flash > 0) { ctx.save(); ctx.globalAlpha = Math.min(1, R.flash); ctx.fillStyle = R.flashCol; ctx.fillRect(0, 0, W, H); ctx.restore(); }
+  if (S && R.scare > 0) jumpscare(ctx, S);
+  cursor(ctx, S);
+};
+
+function overlays(ctx, S, dt) {
+  if (S.phase === 'won') {
+    const st = S.story;
+    if (st.stage === 2) dialog(ctx, '', [st.next], 'face', 'OK', true);
+    else dialog(ctx, 'Minesweeper', [S.level === 0 ? 'Congratulations! You won.' : 'You won.', F_('Time: {0} seconds', Math.floor(st.time))], 'info', 'OK', false);
+  } else if (S.phase === 'dead' && S.deathT > 0.9 && R.scare <= 0) {
+    if (S.level === 0) dialog(ctx, 'Minesweeper', ['Game over.', 'Try again?'], 'info', 'OK', false);
+    else dialog(ctx, 'Minesweeper', ["It's just minesweeper."], 'face', 'Try again', true);
+  } else if (S.phase === 'final') {
+    const g = R.layout(S);
+    const t = S.fin.t;
+    const line = t < 6 ? 'click me' : t < 13 ? 'click me. please.' : 'or don\'t. i can wait.';
+    const sm = g.smiley;
+    const bx = g.wx + g.ww + 18, by = sm.y + 8;
+    ctx.fillStyle = '#ffffe1'; ctx.fillRect(bx, by, 200, 40); ctx.strokeStyle = '#000'; ctx.lineWidth = 1; ctx.strokeRect(bx + 0.5, by + 0.5, 200, 40);
+    txt(ctx, line, bx + 100, by + 20, '#800000', "bold 15px Tahoma, Verdana, sans-serif", 'center');
+    ctx.save(); ctx.strokeStyle = '#ff0000'; ctx.lineWidth = 3; ctx.globalAlpha = 0.5 + 0.5 * Math.sin(R.T * 8); ctx.strokeRect(sm.x - 4, sm.y - 4, sm.w + 8, sm.h + 8); ctx.restore();
+  } else if (S.phase === 'ending') {
+    endingCard(ctx, S);
+  }
+}
+function endingCard(ctx, S) {
+  const t = S.endT;
+  const swept = S.ending === 'swept', off = S.ending === 'off';
+  ctx.fillStyle = swept ? '#008080' : '#000'; ctx.fillRect(0, 0, W, H - TASK);
+  if (swept) desktopEmpty(ctx);
+  const d = { x: W / 2 - 230, y: 150, w: 460, h: 300 };
+  if (t < 0.6) return;
+  bevel(ctx, d.x, d.y, d.w, d.h, true, 3);
+  const gr = ctx.createLinearGradient(d.x, 0, d.x + d.w, 0);
+  gr.addColorStop(0, swept ? '#000080' : off ? '#303030' : '#500000'); gr.addColorStop(1, swept ? '#1084d0' : off ? '#808080' : '#b01818');
+  ctx.fillStyle = gr; ctx.fillRect(d.x + 4, d.y + 4, d.w - 8, 24);
+  txt(ctx, swept || off ? 'Minesweeper' : 'Minesweeper (again)', d.x + 10, d.y + 16, '#fff', "bold 14px Tahoma, Verdana, sans-serif");
+  smileyFace(ctx, d.x + 60, d.y + 90, 32, swept ? 'closed' : 'final', lookAt(d.x + 60, d.y + 90), S);
+  txt(ctx, swept ? 'ENDING: SWEPT AWAY' : off ? "ENDING: IT'S NOW SAFE" : 'ENDING: AGAIN', d.x + 110, d.y + 76, '#000', "bold 20px Tahoma, Verdana, sans-serif");
+  txt(ctx, swept ? 'You clicked it. It is gone now.' : off ? "You turned it off. It's still on." : 'You waited. It likes that.', d.x + 110, d.y + 104, '#000', "15px Tahoma, Verdana, sans-serif");
+  const st = S.stats;
+  const rows = [['Total time', Math.floor(st.time) + ' s'], ['Mines stepped on', st.deaths], ['Times it helped you', st.hints], ['Endings found', (R.endings || 1) + ' / 3']];
+  rows.forEach(([a, b], k) => { txt(ctx, a, d.x + 40, d.y + 150 + k * 26, '#000', "15px Tahoma, Verdana, sans-serif"); txt(ctx, String(b), d.x + d.w - 40, d.y + 150 + k * 26, '#000', "bold 15px Tahoma, Verdana, sans-serif", 'right'); });
+  if (t > 1.2) {
+    const o = { x: d.x + d.w / 2 - 60, y: d.y + d.h - 46, w: 120, h: 32 };
+    R.endBtn = o;
+    bevel(ctx, o.x, o.y, o.w, o.h, true, 2);
+    txt(ctx, S.ending === 'again' ? 'Again' : 'Play again', o.x + o.w / 2, o.y + o.h / 2, '#000', "15px Tahoma, Verdana, sans-serif", 'center');
+  }
+}
+function desktopEmpty(ctx) {
+  txt(ctx, "it was just minesweeper", W - 30, H - TASK - 40, 'rgba(255,255,255,0.12)', "bold 34px Tahoma, Verdana, sans-serif", 'right');
+}
+
+R.init = function (mk, dpr) { R.mk = mk; R.dpr = dpr || 1; };
+R.smileyFace = smileyFace;
+R.h = { bevel, sunken, txt, mineIcon, flagIcon, smileyFace, lookAt };
+G.R = R;
+})(typeof window !== 'undefined' ? window : globalThis);

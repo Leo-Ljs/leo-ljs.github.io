@@ -1,0 +1,464 @@
+// IT'S JUST MINESWEEPER - the rest of the computer: desktop icons, Start menu, Notepad, folders,
+// message boxes, the minesweeper window's own buttons and menus, and shutting down. Exposes window.DESK.
+(function (G) {
+'use strict';
+const SIM = G.SIM, R = G.R;
+const W = 1280, H = 720, TASK = 38, TAU = Math.PI * 2;
+const F = "13px Tahoma, Verdana, sans-serif", FB = "bold 13px Tahoma, Verdana, sans-serif";
+const MONO = "bold 15px 'Courier New', Courier, monospace";
+const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+const inR = (p, r) => !!r && p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.h;
+const play = n => { if (G.AU) G.AU.play(n); };
+
+const D = {
+  wins: [], modal: null, modalFlash: 0, start: false, menu: null, min: false, closed: false,
+  drag: null, shut: null, back: 0, pending: null, said: {}, sel: null,
+};
+const START_BTN = { x: 4, y: H - TASK + 5, w: 86, h: TASK - 10 };
+const TASK_BTN = { x: 100, y: H - TASK + 5, w: 230, h: TASK - 10 };
+
+// ---------- words ----------
+const README = [
+  "MINESWEEPER\n\nClear every square\nthat isn't a mine.\n\nA number = how many\nmines touch it.\n\nRight-click = flag.\nIt's just minesweeper.",
+  "lights off.||\n\nyour mouse is the torch.",
+  "can you hear it?||\n\nhover a number.\nit beats that many times.",
+  "everything is backwards.||\n\nsame game.\nclick what you see.",
+  "when i blink, the ones\nyou can't see move.||\n\nwhat you've seen stays true.\nflags hold them down.",
+  "let me see you.||\n\nclear the board.\nthen look at it.",
+];
+const DAYS = ["day 1  it's just minesweeper.", 'day 2  the lights went out.', 'day 3  it has a heartbeat.', 'day 4  everything is backwards.',
+  "day 5  DON'T LET IT BLINK", 'day 6  it wants my face.', 'day 7  i should have just', '       turned it off.'];
+const readmeName = lv => lv >= 4 ? 'HELP.txt' : 'readme.txt';
+const exeName = lv => lv >= 5 ? 'me.exe' : 'minesweeper.exe';
+function journal(lv) {
+  return DAYS.map(l => T_(l)).map((l, i) => i <= lv + 1 || lv >= 5 ? l : l.slice(0, 7) + '\u2588'.repeat(l.length - 7)).join('\n');
+}
+
+// ---------- windows ----------
+function add(w) { D.wins.push(w); play('pop'); return w; }
+function front(w) { const i = D.wins.indexOf(w); if (i >= 0) { D.wins.splice(i, 1); D.wins.push(w); } }
+function note(title, text, o) {
+  o = o || {}; text = T_(text);
+  let w = D.wins.find(x => x.title === title);
+  if (w) { front(w); if (o.type) { w.text = text; w.shown = 0; w.acc = 0; } return w; }
+  const lines = text.replace(/\|/g, '').split('\n');
+  const tw = clamp(Math.max(...lines.map(l => l.length)) * 9.2 + 44, 250, 350);
+  const th = 64 + lines.length * 19 + 16;
+  const n = D.wins.length;
+  return add({ kind: 'note', title, text, shown: o.type ? 0 : text.length, acc: 0, w: tw, h: th, x: W - tw - 20 - n * 8, y: 24 + n * 26 });
+}
+function folder(title, items) {
+  const had = D.wins.find(x => x.title === title);
+  if (had) { front(had); return had; }
+  const n = D.wins.length, rows = Math.ceil(items.length / 2);
+  return add({ kind: 'folder', title, items, w: 240, h: 44 + rows * 84 + 10, x: 100 + n * 22, y: 30 + n * 26 });
+}
+function pic() {
+  const had = D.wins.find(x => x.kind === 'pic');
+  if (had) { front(had); return had; }
+  play('whisper');
+  return add({ kind: 'pic', title: 'you.bmp - Paint', w: 320, h: 250, x: 110, y: 200 });
+}
+function msg(title, lines, icon, buttons, creepy) {
+  D.modal = { title, lines, icon: icon || 'info', buttons: buttons || [{ l: 'OK' }], creepy: !!creepy };
+  D.start = false; D.menu = null;
+  play(icon === 'err' || icon === 'warn' ? 'err' : creepy ? 'whisper' : 'ding');
+}
+const closeBtn = w => ({ x: w.x + w.w - 24, y: w.y + 6, w: 18, h: 16 });
+
+// ---------- actions ----------
+function act(a, S) {
+  const lv = S.level;
+  switch (a) {
+    case 'mycomp': return folder('My Computer', [['3\u00bd Floppy (A:)', 'floppy', 'floppy'], ['(C:)', 'drive', 'cdrive'], ['Control Panel', 'cpl', 'cpl']]);
+    case 'cdrive': return folder('(C:)', [['WINDOWS', 'folder', 'windir'], ['My Documents', 'folder', 'docs'], [exeName(lv), 'mine', 'game']]);
+    case 'docs': {
+      const it = [[readmeName(lv), 'txt', 'readme']];
+      if (lv >= 2) it.push(['you.bmp', 'bmp', 'you']);
+      if (lv >= 3) it.push(['dont_open.txt', 'txt', 'dont']);
+      return folder('My Documents', it);
+    }
+    case 'bin': return folder('Recycle Bin', [['last_player.txt', 'txt', 'journal'], ['minesweeper_old.exe', 'mine', 'oldexe']]);
+    case 'ie': return lv >= 2 ? msg('Internet Explorer', ['There is no internet.', 'Just you and me.'], 'face', null, true)
+      : msg('Internet Explorer', ['The page cannot be displayed.'], 'err');
+    case 'game':
+      if (D.closed || D.min) { D.closed = D.min = false; D.back = 0; play('pop'); return; }
+      return lv >= 3 ? msg('Minesweeper', ["I'm already running."], 'face', null, true) : msg('Minesweeper', ['Minesweeper is already running.'], 'info');
+    case 'readme': return note(readmeName(lv) + ' - Notepad', README[lv]);
+    case 'journal': return note('last_player.txt - Notepad', journal(lv));
+    case 'dont': return note('dont_open.txt - Notepad', "why did you open this.||||\n\nit's fine.\ni would have too.", { type: true });
+    case 'you': return pic();
+    case 'floppy': return msg('3\u00bd Floppy (A:)', ['A:\\ is not accessible.', 'The device is not ready.'], 'err');
+    case 'windir': return lv >= 3 ? msg('WINDOWS', ['There is nothing else in here.', 'Only the game.'], 'face', null, true) : msg('WINDOWS', ['Access is denied.'], 'err');
+    case 'cpl': return msg('Control Panel', ['Settings are locked by', 'Minesweeper.'], 'warn');
+    case 'oldexe': return lv >= 2 ? msg('Recycle Bin', ["It didn't want to go either."], 'face', null, true) : msg('Recycle Bin', ['Restore this file first.'], 'info');
+    case 'find': return msg('Find: mines', [F_('{0} mines found.', S.B.m), lv >= 2 ? 'Not telling you where.' : 'Location: under the squares.'], 'info');
+    case 'run': return lv >= 3 ? msg('Run', ["Running won't help."], 'face', null, true) : msg('Run', ['Type the name of a program.', 'Or just play.'], 'info');
+    case 'shutdown': return msg('Shut Down Windows', ['Are you sure you want to', 'shut down the computer?'], 'warn', [{ l: 'Yes', a: 'shutYes' }, { l: 'No' }]);
+    case 'shutYes': D.shut = { t: 0, final: S.phase === 'final', said: false }; D.wins = []; play('shut'); return;
+    case 'new':
+      if (S.phase === 'play' || S.phase === 'dead') SIM.smiley(S);
+      else if (S.phase === 'final') msg('Minesweeper', ['No starting over.', 'Not now.'], 'face', null, true);
+      return;
+    case 'level2': return lv >= 2 ? msg('Minesweeper', ['No.', 'This one.'], 'face', null, true) : msg('Minesweeper', ['Finish this one first.'], 'info');
+    case 'sound': if (G.AU) G.AU.setMute(G.AU.on); return;
+    case 'best': return lv >= 3 ? msg('Fastest Mine Sweepers', ['Beginner:  you', 'Intermediate:  you', 'Expert:  you'], 'face', null, true)
+      : msg('Fastest Mine Sweepers', ['Beginner:  999 s  Anonymous', 'Expert:  999 s  Anonymous'], 'info');
+    case 'about': return msg('About Minesweeper', ['Minesweeper for Windows', 'This product is licensed to:', lv >= 4 ? 'ME' : 'YOU'], lv >= 4 ? 'face' : 'info', null, lv >= 4);
+    case 'exit': D.closed = true; D.min = false; play('click'); if (lv >= 2 || S.phase === 'final') D.back = 1.3; return;
+    case 'min': D.min = true; play('click'); if (lv >= 2 || S.phase === 'final') D.back = 1.8; return;
+    case 'max': R.shake = 6; play('no'); return;
+  }
+}
+// the window comes back on its own from board 3 on
+function comeBack() {
+  D.closed = D.min = false; R.glitch = 1; play('glitch');
+  note('Untitled - Notepad', D.said.back ? 'no.' : "no.||||\n\nstay.", { type: true }); D.said.back = true;
+}
+
+// ---------- geometry ----------
+function deskIcons(S) {
+  const lv = S.level;
+  return [['My Computer', 'pc', 'mycomp'], ['My Documents', 'folder', 'docs'], ['Recycle Bin', 'bin', 'bin'], ['Internet Explorer', 'ie', 'ie'],
+    [exeName(lv), 'mine', 'game'], [readmeName(lv), 'txt', 'readme']]
+    .map(([name, k, a], i) => ({ name, k, a, x: 6, y: 12 + i * 86, w: 88, h: 78 }));
+}
+function startGeo() {
+  const items = [['Programs', 'mine', 'game'], ['Documents', 'folder', 'docs'], ['Settings', 'cpl', 'cpl'], ['Find', 'find', 'find'],
+    ['Help', 'help', 'readme'], ['Run...', 'run', 'run'], null, ['Shut Down...', 'power', 'shutdown']];
+  const h = items.reduce((s, it) => s + (it ? 36 : 10), 0) + 8, w = 214, x = 2, y = H - TASK - h - 1;
+  let cy = y + 4;
+  const out = items.map(it => { const r = it ? { l: it[0], k: it[1], a: it[2], x: x + 30, y: cy, w: w - 34, h: 36 } : { sep: true, y: cy, h: 10 }; cy += r.h; return r; });
+  return { x, y, w, h, items: out };
+}
+function chrome(g) {
+  const bx = g.wx + g.ww - 26;
+  return {
+    close: { x: bx, y: g.wy + 7, w: 18, h: 16 }, max: { x: bx - 22, y: g.wy + 7, w: 18, h: 16 }, min: { x: bx - 44, y: g.wy + 7, w: 18, h: 16 },
+    game: { id: 'game', l: 'Game', x: g.wx + 6, y: g.wy + 31, w: 48, h: 20 }, help: { id: 'help', l: 'Help', x: g.wx + 56, y: g.wy + 31, w: 42, h: 20 },
+    title: { x: g.wx, y: g.wy, w: g.ww, h: 30 }, bar: { x: g.wx, y: g.wy + 30, w: g.ww, h: 22 },
+  };
+}
+function menuGeo(S) {
+  const c = chrome(R.layout(S)), lab = c[D.menu];
+  const on = G.AU ? G.AU.on : true;
+  const items = D.menu === 'game'
+    ? [['New', 'new', 'F2'], null, ['Beginner', null, '', true], ['Intermediate', 'level2'], ['Expert', 'level2'], null, ['Sound', 'sound', 'M', on], ['Best Times...', 'best'], null, ['Exit', 'exit']]
+    : [['How to Play', 'readme', 'F1'], null, ['About Minesweeper...', 'about']];
+  const x = lab.x, y = lab.y + lab.h, w = 200;
+  let cy = y + 3;
+  const out = items.map(it => { const r = it ? { l: it[0], a: it[1], key: it[2], check: it[3], x: x + 3, y: cy, w: w - 6, h: 22 } : { sep: true, y: cy, h: 9 }; cy += r.h; return r; });
+  return { x, y, w, h: cy - y + 3, items: out, lab };
+}
+function modalGeo() {
+  const m = D.modal, w = 380, h = 120 + m.lines.length * 22;
+  const x = (W - w) / 2, y = (H - TASK - h) / 2 - 20;
+  const bw = 88, gap = 12, tot = m.buttons.length * bw + (m.buttons.length - 1) * gap;
+  const btns = m.buttons.map((b, k) => ({ l: b.l, a: b.a, x: W / 2 - tot / 2 + k * (bw + gap), y: y + h - 44, w: bw, h: 30 }));
+  return { x, y, w, h, btns, close: { x: x + w - 24, y: y + 7, w: 18, h: 16 } };
+}
+D.visible = () => !D.min && !D.closed;
+
+// ---------- input ----------
+D.press = function (p, S, button) {
+  if (D.shut) return true;
+  if (button !== 0) return !!(D.modal || (D.start && inR(p, startGeo())) || D.wins.some(w => inR(p, w)) || p.y >= H - TASK || deskIcons(S).some(i => inR(p, i)) || !D.visible());
+  if (D.modal) {
+    const m = modalGeo();
+    const b = m.btns.find(b => inR(p, b));
+    if (b || inR(p, m.close)) { D.modal = null; play('click'); if (b && b.a) act(b.a, S); return true; }
+    D.modalFlash = 0.5; play('ding');
+    return true;
+  }
+  if (D.start) {
+    const sm = startGeo();
+    if (inR(p, sm)) { const it = sm.items.find(i => !i.sep && inR(p, { x: sm.x, y: i.y, w: sm.w, h: i.h })); if (it) { D.start = false; play('click'); act(it.a, S); } return true; }
+    D.start = false;
+    if (inR(p, START_BTN)) return true;
+  }
+  if (D.menu) {
+    const mg = menuGeo(S);
+    if (inR(p, mg)) { const it = mg.items.find(i => !i.sep && inR(p, { x: mg.x, y: i.y, w: mg.w, h: i.h })); if (it) { D.menu = null; play('click'); if (it.a) act(it.a, S); } return true; }
+    const was = D.menu; D.menu = null;
+    const c = chrome(R.layout(S));
+    for (const k of ['game', 'help']) if (inR(p, c[k]) && k !== was) D.menu = k;
+    return true;
+  }
+  if (p.y >= H - TASK) {
+    if (inR(p, START_BTN)) { D.start = true; play('click'); }
+    else if (inR(p, TASK_BTN) && !D.closed) { if (D.min) { D.min = false; D.back = 0; play('pop'); } else act('min', S); }
+    return true;
+  }
+  for (let k = D.wins.length - 1; k >= 0; k--) {
+    const w = D.wins[k];
+    if (!inR(p, w)) continue;
+    front(w);
+    if (inR(p, closeBtn(w))) { D.wins.splice(D.wins.indexOf(w), 1); play('click'); return true; }
+    if (p.y < w.y + 28) { D.drag = { w, dx: p.x - w.x, dy: p.y - w.y }; return true; }
+    if (w.kind === 'folder') { const it = folderItems(w).find(i => inR(p, i)); if (it) { play('click'); act(it.a, S); } }
+    if (w.kind === 'note' && w.shown < w.text.length) w.shown = w.text.length;
+    return true;
+  }
+  if (D.visible() && S.phase !== 'ending') {
+    const c = chrome(R.layout(S));
+    if (inR(p, c.close)) { act('exit', S); return true; }
+    if (inR(p, c.max)) { act('max', S); return true; }
+    if (inR(p, c.min)) { act('min', S); return true; }
+    if (inR(p, c.game) || inR(p, c.help)) { D.menu = inR(p, c.game) ? 'game' : 'help'; play('click'); return true; }
+    if (inR(p, c.title) || inR(p, c.bar)) return true;
+  }
+  const ic = deskIcons(S).find(i => inR(p, i));
+  if (ic) { D.sel = ic.name; play('click'); act(ic.a, S); return true; }
+  D.sel = null;
+  return !D.visible();
+};
+D.move = function (p, S) {
+  if (D.drag) { const w = D.drag.w; w.x = clamp(p.x - D.drag.dx, 60 - w.w, W - 60); w.y = clamp(p.y - D.drag.dy, 0, H - TASK - 28); }
+  if (D.menu && S) { const c = chrome(R.layout(S)); for (const k of ['game', 'help']) if (inR(p, c[k])) D.menu = k; }
+};
+D.up = function () { D.drag = null; };
+D.key = function (code, S) {
+  if (code === 'Escape') { D.start = false; D.menu = null; if (D.modal) D.modal = null; return true; }
+  if ((code === 'Enter' || code === 'Space') && D.modal) { const b = D.modal.buttons[0]; D.modal = null; play('click'); if (b.a) act(b.a, S); return true; }
+  if (code === 'F1') { act('readme', S); return true; }
+  return !!D.modal || !!D.shut;
+};
+D.blocking = () => !!(D.modal || D.shut);
+
+// ---------- events / time ----------
+D.onEvent = function (e, S) {
+  switch (e.type) {
+    case 'level':
+      D.wins = []; D.modal = null; D.menu = null; D.start = false; D.min = D.closed = false; D.back = 0; D.drag = null;
+      if (e.level >= 1) D.pending = { t: 0.9, lv: e.level };
+      else if (S.loop > 0 && !D.said['loop' + S.loop]) { D.said['loop' + S.loop] = true; D.pending = { t: 1.2, text: 'hi again.', title: 'Untitled - Notepad' }; }
+      break;
+    case 'open':
+      if (S.level === 0 && !D.said.hi) {
+        const B = S.B, safe = B.mask.filter((m, i) => m && !B.mine[i]).length, rev = B.rev.filter((r, i) => r && !B.mine[i]).length;
+        if (rev / safe >= 0.3) { D.said.hi = true; D.pending = { t: 0.5, text: "hi.||||||\n\nyou're good at this.", title: 'Untitled - Notepad' }; }
+      }
+      break;
+    case 'boom':
+      if (S.level === 0 && !D.said.careful) { D.said.careful = true; D.pending = { t: 2.2, text: 'careful.', title: 'Untitled - Notepad' }; }
+      break;
+    case 'finalStart': D.min = D.closed = false; D.modal = null; break;
+    case 'ending': D.wins = []; D.modal = null; D.menu = null; D.start = false; D.min = D.closed = false; D.shut = null; break;
+  }
+};
+D.step = function (S, dt) {
+  D.modalFlash = Math.max(0, D.modalFlash - dt);
+  if (D.back > 0 && (D.back -= dt) <= 0) { D.back = 0; if (!D.visible()) comeBack(); }
+  if (D.pending && (D.pending.t -= dt) <= 0) {
+    const pd = D.pending; D.pending = null;
+    if (pd.lv != null) { if (pd.lv === S.level) { note(readmeName(pd.lv) + ' - Notepad', README[pd.lv], { type: true }); R.glitch = Math.max(R.glitch, 0.4); } }
+    else note(pd.title, pd.text, { type: true });
+  }
+  for (const w of D.wins) {
+    if (w.kind !== 'note' || w.shown >= w.text.length) continue;
+    w.acc += dt;
+    let guard = 0;
+    while (w.shown < w.text.length && guard++ < 20) {
+      const c = w.text[w.shown], cost = c === '|' ? 0.2 : c === '\n' ? 0.12 : 1 / 22;
+      if (w.acc < cost) break;
+      w.acc -= cost; w.shown++;
+      if (c !== '|' && c !== ' ' && c !== '\n') play('key');
+    }
+  }
+  if (D.shut) {
+    const sh = D.shut; sh.t += dt;
+    if (!sh.final && sh.t > 2 && !sh.said) { sh.said = true; play('scare'); R.shake = 14; }
+    if (sh.final && sh.t > 5.2) { D.shut = null; SIM.shutdown(S); }
+    else if (!sh.final && sh.t > 2.7) { D.shut = null; R.glitch = 1.2; note('Untitled - Notepad', 'not yet.', { type: true }); }
+  }
+};
+
+// ---------- drawing ----------
+function h() { return R.h; }
+function iconArt(ctx, k, x, y, lv) {
+  const { mineIcon } = h();
+  if (k === 'pc') { ctx.fillStyle = '#c0c0c0'; ctx.fillRect(x + 6, y, 36, 28); ctx.fillStyle = lv >= 3 ? '#200' : '#008080'; ctx.fillRect(x + 10, y + 4, 28, 20); ctx.fillStyle = '#c0c0c0'; ctx.fillRect(x + 2, y + 32, 44, 8); ctx.fillStyle = '#808080'; ctx.fillRect(x + 20, y + 28, 8, 4); }
+  else if (k === 'bin') { ctx.fillStyle = '#c8d0d0'; ctx.fillRect(x + 12, y + 6, 24, 32); ctx.fillStyle = '#888'; ctx.fillRect(x + 10, y + 2, 28, 5); for (let j = 0; j < 3; j++) ctx.fillRect(x + 16 + j * 7, y + 10, 2, 24); }
+  else if (k === 'mine') { ctx.fillStyle = '#c0c0c0'; ctx.fillRect(x + 6, y + 2, 36, 36); ctx.fillStyle = '#fff'; ctx.fillRect(x + 6, y + 2, 36, 2); ctx.fillRect(x + 6, y + 2, 2, 36); mineIcon(ctx, x + 8, y + 4, 32, lv >= 5, { x: Math.sin(R.T), y: 0 }); }
+  else if (k === 'txt') { ctx.fillStyle = '#fff'; ctx.fillRect(x + 12, y + 2, 26, 34); ctx.strokeStyle = '#000'; ctx.lineWidth = 1; ctx.strokeRect(x + 12.5, y + 2.5, 25, 33); ctx.fillStyle = '#888'; for (let j = 0; j < 4; j++) ctx.fillRect(x + 16, y + 9 + j * 6, 18, 2); }
+  else if (k === 'folder') { ctx.fillStyle = '#b89820'; ctx.fillRect(x + 6, y + 6, 16, 6); ctx.fillStyle = '#f0d050'; ctx.fillRect(x + 6, y + 10, 36, 26); ctx.fillStyle = '#b89820'; ctx.fillRect(x + 6, y + 34, 36, 2); ctx.fillStyle = '#fff4a8'; ctx.fillRect(x + 8, y + 13, 32, 2); }
+  else if (k === 'ie') { ctx.strokeStyle = '#1a5fd0'; ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(x + 24, y + 20, 12, 0.3, TAU - 0.5); ctx.stroke(); ctx.fillStyle = '#1a5fd0'; ctx.fillRect(x + 13, y + 18, 24, 5); ctx.strokeStyle = '#e8b020'; ctx.lineWidth = 3; ctx.beginPath(); ctx.ellipse(x + 24, y + 20, 22, 8, -0.5, 0, TAU); ctx.stroke(); }
+  else if (k === 'floppy') { ctx.fillStyle = '#2c2c3c'; ctx.fillRect(x + 8, y + 2, 32, 34); ctx.fillStyle = '#c0c0c0'; ctx.fillRect(x + 16, y + 2, 16, 11); ctx.fillStyle = '#2c2c3c'; ctx.fillRect(x + 26, y + 4, 4, 7); ctx.fillStyle = '#fff'; ctx.fillRect(x + 12, y + 18, 24, 16); }
+  else if (k === 'drive') { ctx.fillStyle = '#a0a0a0'; ctx.fillRect(x + 4, y + 14, 40, 16); ctx.fillStyle = '#fff'; ctx.fillRect(x + 4, y + 14, 40, 2); ctx.fillStyle = '#404040'; ctx.fillRect(x + 4, y + 28, 40, 2); ctx.fillStyle = '#00d000'; ctx.fillRect(x + 36, y + 22, 4, 3); }
+  else if (k === 'cpl') { ctx.fillStyle = '#c0c0c0'; ctx.fillRect(x + 8, y + 4, 32, 30); ctx.fillStyle = '#000080'; ctx.fillRect(x + 8, y + 4, 32, 6); [['#ff0000', 14], ['#00a000', 20], ['#0000ff', 26]].forEach(([c, yy]) => { ctx.fillStyle = c; ctx.fillRect(x + 12, y + yy, 12 + (yy % 7) * 2, 3); }); }
+  else if (k === 'bmp') { ctx.fillStyle = '#fff'; ctx.fillRect(x + 6, y + 4, 36, 30); ctx.fillStyle = lv >= 3 ? '#200' : '#60a0ff'; ctx.fillRect(x + 9, y + 7, 30, 24); ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(x + 24, y + 22, 6, 0, TAU); ctx.fill(); ctx.fillRect(x + 14, y + 26, 20, 5); }
+  else if (k === 'find') { ctx.strokeStyle = '#000'; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(x + 20, y + 16, 9, 0, TAU); ctx.stroke(); ctx.fillStyle = '#a0d0ff'; ctx.beginPath(); ctx.arc(x + 20, y + 16, 7, 0, TAU); ctx.fill(); ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(x + 27, y + 23); ctx.lineTo(x + 38, y + 34); ctx.stroke(); }
+  else if (k === 'help') { ctx.fillStyle = '#000080'; ctx.fillRect(x + 12, y + 4, 26, 32); ctx.fillStyle = '#fff'; ctx.font = "bold 22px Georgia, serif"; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('?', x + 25, y + 21); }
+  else if (k === 'run') { ctx.fillStyle = '#c0c0c0'; ctx.fillRect(x + 8, y + 8, 32, 24); ctx.fillStyle = '#000080'; ctx.fillRect(x + 8, y + 8, 32, 5); ctx.fillStyle = '#fff'; ctx.fillRect(x + 12, y + 18, 24, 8); }
+  else if (k === 'power') { iconArt(ctx, 'pc', x, y, lv); ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(x + 10, y + 4, 28, 20); }
+}
+D.drawIcons = function (ctx, S) {
+  const { txt } = h();
+  for (const ic of deskIcons(S)) {
+    const hot = inR(R.cursor, ic) && !D.modal && !D.shut;
+    const sel = D.sel === ic.name;
+    iconArt(ctx, ic.k, ic.x + 20, ic.y + 4, S.level);
+    if (sel) { ctx.fillStyle = 'rgba(0,0,128,0.45)'; ctx.fillRect(ic.x + 26, ic.y + 4, 36, 40); }
+    ctx.font = F;
+    const tw = ctx.measureText ? ctx.measureText(ic.name).width : ic.name.length * 7;
+    if (sel || hot) { ctx.fillStyle = sel ? '#000080' : 'rgba(0,0,128,0.5)'; ctx.fillRect(ic.x + 44 - tw / 2 - 3, ic.y + 51, tw + 6, 17); }
+    txt(ctx, ic.name, ic.x + 44, ic.y + 60, '#fff', F, 'center');
+  }
+};
+function titleBar(ctx, x, y, w, title, active, creepy) {
+  const gr = ctx.createLinearGradient(x, 0, x + w, 0);
+  if (active) { gr.addColorStop(0, creepy ? '#500000' : '#000080'); gr.addColorStop(1, creepy ? '#b01818' : '#1084d0'); }
+  else { gr.addColorStop(0, '#808080'); gr.addColorStop(1, '#b0b0b0'); }
+  ctx.fillStyle = gr; ctx.fillRect(x + 4, y + 4, w - 8, 22);
+  h().txt(ctx, title, x + 10, y + 15, active ? '#fff' : '#d4d0c8', FB);
+}
+function xBtn(ctx, r) {
+  h().bevel(ctx, r.x, r.y, r.w, r.h, true);
+  ctx.save(); ctx.translate(r.x + 9, r.y + 8); ctx.fillStyle = '#000'; ctx.rotate(Math.PI / 4); ctx.fillRect(-5, -1, 10, 2); ctx.rotate(Math.PI / 2); ctx.fillRect(-5, -1, 10, 2); ctx.restore();
+}
+function folderItems(w) {
+  return w.items.map(([n, k, a], i) => ({ n, k, a, x: w.x + 10 + (i % 2) * 110, y: w.y + 38 + Math.floor(i / 2) * 84, w: 108, h: 80 }));
+}
+D.drawWins = function (ctx, S) {
+  const { bevel, txt } = h();
+  D.wins.forEach((w, idx) => {
+    const active = idx === D.wins.length - 1;
+    ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fillRect(w.x + 5, w.y + 5, w.w, w.h);
+    bevel(ctx, w.x, w.y, w.w, w.h, true, 3);
+    titleBar(ctx, w.x, w.y, w.w, w.title, active, S.level >= 4 && w.kind === 'note');
+    xBtn(ctx, closeBtn(w));
+    if (w.kind === 'note') {
+      txt(ctx, 'File   Edit   Search   Help', w.x + 10, w.y + 38, '#000', F);
+      ctx.fillStyle = '#fff'; ctx.fillRect(w.x + 6, w.y + 50, w.w - 12, w.h - 56);
+      ctx.fillStyle = '#808080'; ctx.fillRect(w.x + 6, w.y + 50, w.w - 12, 2); ctx.fillRect(w.x + 6, w.y + 50, 2, w.h - 56);
+      const vis = w.text.slice(0, w.shown).replace(/\|/g, '').split('\n');
+      const col = S.level >= 4 ? '#700' : '#000';
+      vis.forEach((l, k) => txt(ctx, l, w.x + 14, w.y + 66 + k * 19, col, MONO));
+      if ((R.T % 1) < 0.55) { ctx.font = MONO; const last = vis[vis.length - 1]; const cw = ctx.measureText ? ctx.measureText(last).width : last.length * 9; ctx.fillStyle = '#000'; ctx.fillRect(w.x + 15 + cw, w.y + 58 + (vis.length - 1) * 19, 2, 16); }
+    } else if (w.kind === 'folder') {
+      ctx.fillStyle = '#fff'; ctx.fillRect(w.x + 6, w.y + 32, w.w - 12, w.h - 38);
+      ctx.fillStyle = '#808080'; ctx.fillRect(w.x + 6, w.y + 32, w.w - 12, 2); ctx.fillRect(w.x + 6, w.y + 32, 2, w.h - 38);
+      for (const it of folderItems(w)) {
+        const hot = inR(R.cursor, it) && active && !D.modal;
+        iconArt(ctx, it.k, it.x + 30, it.y + 6, S.level);
+        const f = "12px Tahoma, Verdana, sans-serif";
+        ctx.font = f;
+        const tw = ctx.measureText ? ctx.measureText(it.n).width : it.n.length * 6;
+        if (hot) { ctx.fillStyle = '#000080'; ctx.fillRect(it.x + 54 - tw / 2 - 3, it.y + 53, tw + 6, 16); }
+        txt(ctx, it.n, it.x + 54, it.y + 61, hot ? '#fff' : '#000', f, 'center');
+      }
+    } else if (w.kind === 'pic') drawYou(ctx, w);
+  });
+};
+// you.bmp: somebody at a computer, seen from behind. the screen is this game.
+function drawYou(ctx, w) {
+  const x = w.x + 6, y = w.y + 30, cw = w.w - 12, ch = w.h - 36;
+  ctx.save(); ctx.beginPath(); ctx.rect(x, y, cw, ch); ctx.clip();
+  ctx.fillStyle = '#07070c'; ctx.fillRect(x, y, cw, ch);
+  const mx = x + cw / 2, my = y + 70;
+  const glow = ctx.createRadialGradient(mx, my, 10, mx, my, 170);
+  glow.addColorStop(0, 'rgba(120,170,200,0.35)'); glow.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = glow; ctx.fillRect(x, y, cw, ch);
+  ctx.fillStyle = '#c0c0c0'; ctx.fillRect(mx - 62, my - 48, 124, 92);
+  ctx.fillStyle = '#008080'; ctx.fillRect(mx - 54, my - 40, 108, 72);
+  ctx.fillStyle = '#c0c0c0'; ctx.fillRect(mx - 22, my - 30, 44, 52);
+  ctx.fillStyle = '#808080'; for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) ctx.fillRect(mx - 18 + i * 9, my - 12 + j * 8, 7, 6);
+  ctx.fillStyle = '#ff0'; ctx.beginPath(); ctx.arc(mx, my - 22, 4, 0, TAU); ctx.fill();
+  // the back of your head
+  ctx.fillStyle = '#000';
+  ctx.beginPath(); ctx.ellipse(mx + 6, y + ch - 40, 34, 40, 0, 0, TAU); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(mx + 6, y + ch + 30, 95, 60, 0, 0, TAU); ctx.fill();
+  ctx.restore();
+}
+D.drawTop = function (ctx, S) {
+  const { bevel, txt, smileyFace } = h();
+  // minesweeper menus
+  if (D.menu && D.visible() && S.phase !== 'ending') {
+    const mg = menuGeo(S);
+    bevel(ctx, mg.lab.x, mg.lab.y, mg.lab.w, mg.lab.h, false, 1);
+    txt(ctx, mg.lab.l, mg.lab.x + 6, mg.lab.y + 10, '#000', "15px Tahoma, Verdana, sans-serif");
+    ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fillRect(mg.x + 4, mg.y + 4, mg.w, mg.h);
+    bevel(ctx, mg.x, mg.y, mg.w, mg.h, true, 2);
+    for (const it of mg.items) {
+      if (it.sep) { ctx.fillStyle = '#808080'; ctx.fillRect(mg.x + 4, it.y + 4, mg.w - 8, 1); ctx.fillStyle = '#fff'; ctx.fillRect(mg.x + 4, it.y + 5, mg.w - 8, 1); continue; }
+      const hot = inR(R.cursor, it);
+      if (hot) { ctx.fillStyle = '#000080'; ctx.fillRect(it.x, it.y, it.w, it.h); }
+      const col = hot ? '#fff' : '#000';
+      if (it.check) txt(ctx, '\u2713', it.x + 6, it.y + 11, col, FB);
+      txt(ctx, it.l, it.x + 22, it.y + 11, col, F);
+      if (it.key) txt(ctx, it.key, it.x + it.w - 10, it.y + 11, col, F, 'right');
+    }
+  }
+  // start menu
+  if (D.start) {
+    const sm = startGeo();
+    ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fillRect(sm.x + 4, sm.y + 4, sm.w, sm.h);
+    bevel(ctx, sm.x, sm.y, sm.w, sm.h, true, 2);
+    const gr = ctx.createLinearGradient(0, sm.y + sm.h, 0, sm.y);
+    gr.addColorStop(0, '#000080'); gr.addColorStop(1, '#1084d0');
+    ctx.fillStyle = gr; ctx.fillRect(sm.x + 3, sm.y + 3, 24, sm.h - 6);
+    ctx.save(); ctx.translate(sm.x + 21, sm.y + sm.h - 10); ctx.rotate(-Math.PI / 2);
+    txt(ctx, 'Windows', 0, 0, '#c0c0c0', "bold 18px Arial, sans-serif"); txt(ctx, '98', 78, 0, '#fff', "18px Arial, sans-serif");
+    ctx.restore();
+    for (const it of sm.items) {
+      if (it.sep) { ctx.fillStyle = '#808080'; ctx.fillRect(sm.x + 30, it.y + 4, sm.w - 34, 1); ctx.fillStyle = '#fff'; ctx.fillRect(sm.x + 30, it.y + 5, sm.w - 34, 1); continue; }
+      const hot = inR(R.cursor, it);
+      if (hot) { ctx.fillStyle = '#000080'; ctx.fillRect(it.x, it.y, it.w, it.h); }
+      ctx.save(); ctx.translate(it.x + 4, it.y + 4); ctx.scale(0.62, 0.7); iconArt(ctx, it.k, 0, 0, S.level); ctx.restore();
+      txt(ctx, it.l, it.x + 40, it.y + 18, hot ? '#fff' : '#000', "15px Tahoma, Verdana, sans-serif");
+    }
+  }
+  // message box
+  if (D.modal) {
+    const m = D.modal, g = modalGeo();
+    ctx.save();
+    if (m.creepy) ctx.translate((Math.random() - 0.5) * 2, (Math.random() - 0.5) * 2);
+    ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fillRect(g.x + 6, g.y + 6, g.w, g.h);
+    bevel(ctx, g.x, g.y, g.w, g.h, true, 3);
+    titleBar(ctx, g.x, g.y, g.w, m.title, D.modalFlash <= 0 || (D.modalFlash * 10 | 0) % 2 === 0, m.creepy);
+    xBtn(ctx, g.close);
+    const ix = g.x + 42, iy = g.y + 62;
+    if (m.icon === 'info') { ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(ix, iy, 17, 0, TAU); ctx.fill(); ctx.strokeStyle = '#000080'; ctx.lineWidth = 2; ctx.stroke(); txt(ctx, 'i', ix, iy + 1, '#000080', "bold italic 22px Georgia, serif", 'center'); }
+    else if (m.icon === 'warn') { ctx.fillStyle = '#ffd800'; ctx.beginPath(); ctx.moveTo(ix, iy - 18); ctx.lineTo(ix + 19, iy + 15); ctx.lineTo(ix - 19, iy + 15); ctx.closePath(); ctx.fill(); ctx.strokeStyle = '#000'; ctx.lineWidth = 2; ctx.stroke(); txt(ctx, '!', ix, iy + 3, '#000', "bold 20px Tahoma, sans-serif", 'center'); }
+    else if (m.icon === 'face') smileyFace(ctx, ix, iy, 19, 'hollow', { x: (R.cursor.x - ix) / 300, y: (R.cursor.y - iy) / 300 });
+    else { ctx.fillStyle = '#c00000'; ctx.beginPath(); ctx.arc(ix, iy, 17, 0, TAU); ctx.fill(); txt(ctx, '\u00d7', ix, iy + 1, '#fff', "bold 24px Tahoma, sans-serif", 'center'); }
+    m.lines.forEach((l, k) => txt(ctx, l, g.x + 78, g.y + 52 + k * 22, '#000', m.creepy ? "bold 15px Tahoma, Verdana, sans-serif" : "15px Tahoma, Verdana, sans-serif"));
+    g.btns.forEach((b, k) => {
+      bevel(ctx, b.x, b.y, b.w, b.h, true, 2);
+      if (k === 0) { ctx.strokeStyle = '#000'; ctx.lineWidth = 1; ctx.setLineDash([1, 2]); ctx.strokeRect(b.x + 4.5, b.y + 4.5, b.w - 9, b.h - 9); ctx.setLineDash([]); }
+      txt(ctx, b.l, b.x + b.w / 2, b.y + b.h / 2, '#000', "15px Tahoma, Verdana, sans-serif", 'center');
+    });
+    ctx.restore();
+  }
+};
+D.drawShut = function (ctx, S) {
+  const sh = D.shut;
+  if (!sh) return;
+  const { txt, smileyFace } = h();
+  const t = sh.t;
+  ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
+  if (t < 2) {
+    ctx.save(); ctx.globalAlpha = Math.min(1, t * 3);
+    const g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#16328c'); g.addColorStop(1, '#5c98dc');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    txt(ctx, 'Windows is shutting down...', W / 2, H / 2, '#fff', "bold 30px Tahoma, Verdana, sans-serif", 'center');
+    ctx.restore();
+  } else if (sh.final) {
+    if (t > 2.5) {
+      txt(ctx, "It's now safe to turn off", W / 2, H / 2 - 24, '#ff9a00', "bold 34px 'Courier New', monospace", 'center');
+      txt(ctx, 'your computer.', W / 2, H / 2 + 22, '#ff9a00', "bold 34px 'Courier New', monospace", 'center');
+    }
+  } else {
+    const u = (t - 2) / 0.7;
+    ctx.save(); ctx.translate(W / 2 + (Math.random() - 0.5) * 20, H / 2 - 30); ctx.scale(1 + u * 0.6, 1 + u * 0.6);
+    smileyFace(ctx, 0, 0, 130, 'hollow', { x: 0, y: 0 });
+    ctx.restore();
+    txt(ctx, 'not yet.', W / 2, H - 110, '#ff2020', "bold 34px Tahoma, Verdana, sans-serif", 'center');
+  }
+};
+
+D.act = act;
+D.startGeo = startGeo; D.menuGeo = menuGeo; D.modalGeo = modalGeo; D.chrome = chrome; D.deskIcons = deskIcons; D.folderItems = folderItems;
+D.TASK_BTN = TASK_BTN; D.START_BTN = START_BTN;
+G.DESK = D;
+})(typeof window !== 'undefined' ? window : globalThis);
