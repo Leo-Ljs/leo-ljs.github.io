@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "type": "leoljs-games",
+  "updatedAt": "2026-10-04",
+  "games": [
+    {
+      "id": "its_just_minesweeper",
+      "name": "扫雷 Minesweeper",
+      "folder": "its_just_minesweeper",
+      "path": "its_just_minesweeper/",
+      "desc": "经典扫雷玩法，支持鼠标与触屏操作，翻开所有安全格即可通关。",
+      "tags": ["益智", "经典"],
+      "cover": "",
+      "order": 1,
+      "featured": true,
+      "hidden": false
+    },
+    {
+      "id": "o",
+      "name": "ONE OF THESE IS YOU",
+      "folder": "o",
+      "path": "o/",
+      "desc": "互动解谜风格的网页小游戏，跟随提示找出与众不同的那一个。",
+      "tags": ["互动", "解谜"],
+      "cover": "",
+      "order": 2,
+      "featured": false,
+      "hidden": false
+    },
+    {
+      "id": "progress99",
+      "name": "99%",
+      "folder": "progress99",
+      "path": "progress99/",
+      "desc": "以进度为主题的网页小游戏，在有限条件下推进到终点。",
+      "tags": ["解谜", "短篇"],
+      "cover": "",
+      "order": 3,
+      "featured": false,
+      "hidden": false
+    }
+  ]
+}

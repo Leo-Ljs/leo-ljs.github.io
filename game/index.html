@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#7c5cff">
+<title>游戏中心 · Leo 的网页小站</title>
+<meta name="description" content="自动收录 game 目录下所有子文件夹的网页小游戏中心，支持搜索、标签筛选与（权限 4）可视化编辑。">
+<link rel="stylesheet" href="../assets/css/leo-ui.css">
+</head>
+<body class="leo-page">
+<nav id="leo-nav" class="leo-nav"></nav>
+
+<main class="leo-wrap">
+  <section class="leo-section" style="margin-top:0">
+    <header>
+      <h2>游戏中心 <span class="count" id="g-count">—</span></h2>
+      <span class="hint" id="g-source"></span>
+    </header>
+
+    <!-- 工具栏（权限不足时由脚本隐藏并显示锁定提示） -->
+    <div class="leo-card pad" id="g-tools">
+      <div class="leo-row">
+        <div class="leo-field" style="flex:2.2">
+          <label>搜索</label>
+          <input class="leo-input" id="q" type="search" placeholder="按名称 / 简介 / 标签 / 文件夹搜索">
+        </div>
+        <div class="leo-field">
+          <label>排序</label>
+          <select class="leo-select" id="sort">
+            <option value="order">目录顺序</option>
+            <option value="name">按名称</option>
+            <option value="new">最新在前</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="leo-field" style="margin-bottom:8px">
+        <label>标签筛选</label>
+        <div id="tags" style="display:flex;gap:7px;flex-wrap:wrap"></div>
+      </div>
+
+      <div class="leo-divider"></div>
+
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <label class="leo-check leo-hidden" id="fav-wrap"><input type="checkbox" id="fav-only"> 只看收藏</label>
+        <label class="leo-check leo-hidden" id="hidden-wrap"><input type="checkbox" id="show-hidden"> 包含已隐藏</label>
+        <button class="leo-btn sm" id="btn-clear" type="button">清除筛选</button>
+        <button class="leo-btn sm leo-hidden" id="btn-scan" type="button">扫描 game/ 目录</button>
+        <button class="leo-btn sm leo-hidden" id="btn-export" type="button">导出 games.json</button>
+        <button class="leo-btn sm leo-hidden" id="btn-editor" type="button">打开可视化编辑器</button>
+      </div>
+      <p class="hint" id="scan-info" style="margin:12px 0 0"></p>
+    </div>
+
+    <!-- 权限不足时的锁定提示落点 -->
+    <div id="locked" class="leo-hidden" style="margin-top:16px"></div>
+
+    <div class="leo-grid" id="games" style="margin-top:16px"></div>
+  </section>
+
+  <!-- 权限 4：游戏目录可视化编辑 -->
+  <section class="leo-section leo-hidden" id="editor-sec">
+    <header>
+      <h2>可视化编辑游戏目录 <span class="count">需要权限 4</span></h2>
+      <span class="hint">修改先保存到当前浏览器；点「导出 games.json」可提交到仓库让所有访问者生效</span>
+    </header>
+    <div class="leo-card pad leo-hidden" id="cat-editor"></div>
+  </section>
+
+  <footer class="leo-footer" id="footer"></footer>
+</main>
+
+<script src="../assets/js/leo-auth.js"></script>
+<script src="../assets/js/leo-site.js"></script>
+<script src="../assets/js/leo-catalog.js"></script>
+<script src="../assets/js/leo-ui.js"></script>
+<script>
+/*!
+ * 游戏中心逻辑：把 game/ 下的每个子文件夹作为一个游戏收录，
+ * 支持搜索 / 标签 / 排序 / 收藏，权限 4 可扫描目录并可视化编辑目录数据。
+ */
+(function () {
+  'use strict';
+  var A = window.LEOAuth, S = window.LEOSite, C = window.LEOCatalog, U = window.LEOUI;
+  if (!A || !U || !C) { try { console.error('[games] 需要先加载 leo-auth.js / leo-catalog.js / leo-ui.js'); } catch (e) { /* ignore */ } return; }
+
+  var esc = U.esc;
+  var $ = function (sel) { return document.querySelector(sel); };
+  var FAV_KEY = 'leoljs.fav.v1';
+  var state = { q: '', tag: '', sort: 'order', favOnly: false, hidden: false };
+  var editorMounted = false;
+  var scanning = false;
+
+  /* ======================== 收藏（权限 2 起可用，保存在本地） ======================== */
+  function favs() {
+    try {
+      var list = JSON.parse(localStorage.getItem(FAV_KEY) || '[]');
+      return Array.isArray(list) ? list : [];
+    } catch (e) { return []; }
+  }
+  function isFav(id) { return favs().indexOf(id) >= 0; }
+  function toggleFav(id) {
+    if (!A.can('personal')) { U.guard('personal'); return; }
+    var list = favs(), i = list.indexOf(id);
+    if (i >= 0) list.splice(i, 1); else list.push(id);
+    try { localStorage.setItem(FAV_KEY, JSON.stringify(list)); } catch (e) { /* ignore */ }
+    U.toast(i >= 0 ? '已取消收藏' : '已加入收藏', 'ok');
+    render();
+  }
+
+  /* ======================== 卡片 ======================== */
+  function hrefFor(href) { return U.abs(href || './'); }
+  function coverUrl(g) {
+    var c = String((g && g.cover) || '').trim();
+    if (!c) return '';
+    if (/^[a-z][a-z0-9+.-]*:/i.test(c) || c.charAt(0) === '/') return c;
+    return C.folderUrl(g.folder) + c.replace(/^\.?\//, '');
+  }
+  function card(g) {
+    var url = C.gameUrl(g);
+    var cover = coverUrl(g);
+    var initial = String(g.name || '?').trim().charAt(0).toUpperCase() || '?';
+    return '<article class="leo-game">' +
+      '<a class="cover" href="' + esc(url) + '">' +
+        (cover
+          ? '<img src="' + esc(cover) + '" alt="' + esc(g.name) + ' 封面" loading="lazy">'
+          : '<span class="fallback">' + esc(initial) + '</span>') +
+        (g.featured ? '<span class="flag">精选</span>' : '') +
+      '</a>' +
+      '<div class="body">' +
+        '<div class="ttl">' + esc(g.name) + (g.hidden ? ' <span class="leo-perm p0">已隐藏</span>' : '') + '</div>' +
+        '<div class="desc">' + esc(g.desc || '暂无简介，可在管理中心的「游戏目录」里补充。') + '</div>' +
+        (g.tags && g.tags.length
+          ? '<div class="tags">' + g.tags.map(function (t) { return '<span class="tag">' + esc(t) + '</span>'; }).join('') + '</div>'
+          : '') +
+        '<div class="actions">' +
+          '<a class="leo-btn sm primary" href="' + esc(url) + '">开始游戏</a>' +
+          '<button class="leo-fav' + (isFav(g.id) ? ' on' : '') + '" type="button" data-fav="' + esc(g.id) +
+            '" title="收藏（需权限 2）" aria-label="收藏">' + (isFav(g.id) ? '★' : '☆') + '</button>' +
+        '</div>' +
+        '<div class="path">game/' + esc(g.folder) + '/</div>' +
+      '</div></article>';
+  }
+
+  /* ======================== 渲染 ======================== */
+  function currentList() {
+    var opts = { q: state.q, tag: state.tag, sort: state.sort, includeHidden: state.hidden };
+    var arr = C.list(opts);
+    if (state.favOnly) {
+      var f = favs();
+      arr = arr.filter(function (g) { return f.indexOf(g.id) >= 0; });
+    } else if (A.can('personal') && !state.q && !state.tag) {
+      arr.sort(function (a, b) { return (isFav(b.id) ? 1 : 0) - (isFav(a.id) ? 1 : 0); });
+    }
+    return arr;
+  }
+
+  function renderTags() {
+    var tags = C.tags();
+    var html = '<button class="leo-chip' + (state.tag ? '' : ' active') + '" type="button" data-tag="">全部</button>' +
+      tags.map(function (t) {
+        return '<button class="leo-chip' + (state.tag === t.tag ? ' active' : '') + '" type="button" data-tag="' +
+          esc(t.tag) + '">' + esc(t.tag) + ' · ' + t.count + '</button>';
+      }).join('');
+    $('#tags').innerHTML = html;
+  }
+
+  function render() {
+    var allowed = A.can('viewGames');
+    $('#g-tools').classList[allowed ? 'remove' : 'add']('leo-hidden');
+    var locked = $('#locked');
+    if (!allowed) {
+      locked.classList.remove('leo-hidden');
+      U.renderLock(locked, 'viewGames');
+      $('#games').innerHTML = '';
+      $('#g-count').textContent = '—';
+      $('#g-source').textContent = '';
+      $('#editor-sec').classList.add('leo-hidden');
+      return;
+    }
+    locked.classList.add('leo-hidden');
+    locked.innerHTML = '';
+
+    /* 权限相关的按钮显隐 */
+    $('#fav-wrap').classList[A.can('personal') ? 'remove' : 'add']('leo-hidden');
+    $('#hidden-wrap').classList[A.can('editCatalog') ? 'remove' : 'add']('leo-hidden');
+    $('#btn-scan').classList[A.can('editCatalog') ? 'remove' : 'add']('leo-hidden');
+    $('#btn-editor').classList[A.can('editCatalog') ? 'remove' : 'add']('leo-hidden');
+    $('#btn-export').classList[A.can('exportCatalog') ? 'remove' : 'add']('leo-hidden');
+    $('#editor-sec').classList[A.can('editCatalog') ? 'remove' : 'add']('leo-hidden');
+
+    /* 输入控件状态 */
+    if ($('#q').value !== state.q) $('#q').value = state.q;
+    $('#sort').value = state.sort;
+    $('#fav-only').checked = state.favOnly;
+    $('#show-hidden').checked = state.hidden;
+    renderTags();
+
+    var list = currentList();
+    var st = C.stats();
+    $('#g-count').textContent = '显示 ' + list.length + ' / 共 ' + st.total + ' 个，可见 ' + st.visible + ' 个';
+    $('#g-source').textContent = '目录来源：' + C.sourceLabel() + '　·　入口目录：' + C.dirUrl();
+
+    $('#games').innerHTML = list.map(card).join('') ||
+      '<p class="leo-empty">没有匹配的游戏。' +
+        (A.can('editCatalog')
+          ? '把游戏放进 <code>game/新的文件夹/index.html</code>，再点上面的「扫描 game/ 目录」即可收录。'
+          : '试试清除筛选条件。') + '</p>';
+
+    var last = C.getLastScan();
+    $('#scan-info').textContent = last
+      ? ('上次扫描：' + C.scanSummary(last))
+      : '提示：GitHub Pages 等静态托管不提供目录索引，扫描会按 games.json 清单逐条校验；本地开发服务器可直接枚举子文件夹。';
+  }
+
+  function renderFooter() {
+    var cfg = (S && S.get) ? S.get() : null;
+    var f = (cfg && cfg.footer) || {};
+    var links = (f.links && f.links.length ? f.links : [
+      { label: '主页', href: './' }, { label: '游戏中心', href: 'game/' }, { label: '音乐播放器', href: 'music/' }
+    ]).map(function (l) {
+      return '<a href="' + esc(hrefFor(l.href)) + '">' + esc(l.label || l.href) + '</a>';
+    }).join('');
+    $('#footer').innerHTML = '<div>' + esc(f.text || 'Leo 的网页小站 · 纯静态站点') + '</div><div class="links">' + links + '</div>';
+  }
+
+  /* ======================== 交互 ======================== */
+  $('#games').addEventListener('click', function (ev) {
+    var fav = ev.target.closest('[data-fav]');
+    if (!fav) return;
+    ev.preventDefault();
+    toggleFav(fav.getAttribute('data-fav'));
+  });
+  $('#tags').addEventListener('click', function (ev) {
+    var chip = ev.target.closest('[data-tag]');
+    if (!chip) return;
+    state.tag = chip.getAttribute('data-tag') || '';
+    render();
+  });
+  $('#q').addEventListener('input', function () { state.q = this.value.trim(); render(); });
+  $('#sort').addEventListener('change', function () { state.sort = this.value; render(); });
+  $('#fav-only').addEventListener('change', function () { state.favOnly = !!this.checked; render(); });
+  $('#show-hidden').addEventListener('change', function () { state.hidden = !!this.checked; render(); });
+  $('#btn-clear').addEventListener('click', function () {
+    state.q = ''; state.tag = ''; state.favOnly = false; state.hidden = false; state.sort = 'order';
+    render();
+  });
+
+  $('#btn-scan').addEventListener('click', function () {
+    if (scanning) return;
+    scanning = true;
+    var btn = this;
+    var old = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = '扫描中…';
+    U.toast('正在扫描 game/ 目录…');
+    C.scan({ refresh: true }).then(function (res) {
+      render();
+      var info = C.scanSummary(res);
+      if (res.error) info += '。' + res.error;
+      $('#scan-info').textContent = '上次扫描：' + info;
+      U.toast(res.changed ? '扫描完成，目录已更新' : '扫描完成，目录无变化', 'ok');
+    }).catch(function (err) {
+      U.toast('扫描失败：' + ((err && err.message) || err), 'err');
+    }).then(function () {
+      scanning = false;
+      btn.disabled = false;
+      btn.textContent = old;
+    });
+  });
+
+  $('#btn-export').addEventListener('click', function () {
+    C.downloadJSON('games.json', C.exportJSON());
+    U.toast('已导出 games.json（可提交到 game/games.json）', 'ok');
+  });
+
+  $('#btn-editor').addEventListener('click', function () {
+    var host = $('#cat-editor');
+    if (!host.classList.contains('leo-hidden')) {
+      host.classList.add('leo-hidden');
+      this.textContent = '打开可视化编辑器';
+      return;
+    }
+    host.classList.remove('leo-hidden');
+    if (!editorMounted) { editorMounted = true; C.mountEditor('#cat-editor'); }
+    this.textContent = '收起可视化编辑器';
+  });
+
+  /* ======================== 启动 ======================== */
+  U.mountNav({ host: '#leo-nav', onAuth: function () { render(); } });
+  A.on(render);
+  C.on(render);
+  if (S && S.on) S.on(render);
+  render();
+  renderFooter();
+
+  A.ready.then(function () {
+    /* 与主页一致：同时读取站点配置（site.json）与游戏目录（games.json） */
+    return Promise.all([(S && S.load) ? S.load() : null, C.load()]);
+  }).then(function () {
+    render();
+    renderFooter();
+  }).catch(function (err) {
+    try { console.error('[games] 初始化失败', err); } catch (e) { /* ignore */ }
+  });
+})();
+</script>
+</body>
+</html>
+
+

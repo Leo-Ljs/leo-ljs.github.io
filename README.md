@@ -1,2 +1,134 @@
-# leo-ljs.github.io
-TEST WebSite.
+# Leo 的网页小站（leo-ljs-github.io）
+
+纯静态个人站点：主页 + 游戏中心 + 音乐播放器 + 站点管理中心。全部内容由前端 JavaScript
+驱动，没有后端：站点配置、游戏目录与账户数据保存在浏览器 `localStorage`，也可以导出成
+JSON 提交回仓库，作为所有访客共享的只读基线。
+
+## 目录结构
+
+```
+/
+├─ index.html                     主页（站点配置驱动，可按权限进入编辑模式）
+├─ admin/index.html               管理中心（概览 / 账户管理 / 站点内容 / 游戏目录 / 我的账户 / 权限说明）
+├─ game/
+│  ├─ index.html                  游戏中心（读取 game/games.json）
+│  ├─ games.json                  游戏目录数据（可由管理中心的「游戏目录」面板导出后覆盖）
+│  ├─ its_just_minesweeper/       扫雷
+│  ├─ o/                          ONE OF THESE IS YOU
+│  └─ progress99/                 99%
+├─ music/
+│  ├─ index.html                  音乐播放器（扫描音乐目录中的音频文件）
+│  └─ musics/                     音频文件
+└─ assets/
+   ├─ css/leo-ui.css              全站样式（卡片、导航、标签页、编辑器、提示等）
+   ├─ js/leo-auth.js              账户 / 权限 / 登录模态框
+   ├─ js/leo-site.js              站点内容（site.json 读取 / 保存 / 导出）
+   ├─ js/leo-catalog.js           游戏目录（games.json 读取 / 扫描 / 保存 / 导出）
+   ├─ js/leo-ui.js                导航挂载、Toast、权限锁定提示、通用面板（登录 / 账户 / 编辑）
+   └─ data/
+      ├─ site.json                站点默认内容（提交到仓库，对所有访客生效）
+      └─ accounts.json            可选：默认账户表（首次访问且本地无账户数据时读取）
+```
+
+## 本地预览
+
+页面通过 `fetch` 读取 `assets/data/*.json` 与 `game/games.json`，浏览器会拦截 `file://`
+下的这类请求，因此请用任意静态服务器（或 GitHub Pages / VS Code Live Server）预览：
+
+```
+cd <仓库根目录>
+python -m http.server 8000
+# 然后打开 http://127.0.0.1:8000/
+```
+
+音乐播放器内部按站点的 `/music/` 路径扫描音频，请把站点放在域名根目录下访问。
+
+## 权限与账户
+
+账户与权限完全在浏览器端实现（`localStorage`），**不是服务器级安全边界**，只用于站点内容的
+分级授权与可视化编辑。前端校验能防误操作，但无法阻止有意绕过的人，请不要在此存放真实敏感信息。
+
+| 权限 | 名称 | 说明 |
+|---|---|---|
+| 0 | 受限访客 | 仅可浏览主页面公开内容 |
+| 1 | 浏览者 | 可进入游戏中心与音乐播放器 |
+| 2 | 高级成员 | 额外可用个人中心、收藏与偏好 |
+| 3 | 内容审核员 | 只读查看账户列表、导出目录快照 |
+| 4 | 超级管理员 | 管理主页内容、游戏目录与账户 |
+
+- 默认账户：**admin / admin**（权限 4，首次打开自动创建）。请登录后立即在「我的账户」里修改密码。
+- 能力表（`LEOAuth.CAPS`）：`viewHome`(0)、`viewGames`(1)、`useMusic`(1)、`personal`(2)、
+  `exportCatalog`(3)、`viewAccounts`(3)、`editSite`(4)、`editCatalog`(4)、`manageAccounts`(4)。
+- 密码摘要：优先 `sha256("leoljs$" + salt + "$" + 明文)`；在没有 `crypto.subtle` 的环境
+  （例如直接 `file://` 打开）自动退化为内置的加盐 FNV-1a 摘要。记录中同时保留两种摘要，
+  因此同一份账户表在不同环境下都能登录。
+- 登录会话保存在 `localStorage`，有效期 7 天。
+- 本地存储键：`leoljs.accounts.v1`（账户表）、`leoljs.site.v1`（站点内容）、
+  `leoljs.catalog.v1`（游戏目录）、`leoljs.session.v1`（登录会话）。
+
+## 管理中心（admin/）
+
+打开 `/admin/`，用 `admin / admin` 登录即可看到六个标签页：
+
+| 标签页 | 内容 | 最低权限 |
+|---|---|---|
+| 概览 | 站点状态卡片（账户数、游戏数、可见/隐藏、精选、站点内容来源、摘要算法）、一键扫描游戏目录、重新读取仓库 JSON | 3 |
+| 账户管理 | 账户列表（名称 / 权限 / 备注 / 创建与更新时间）、新增、改名、改权限、重置密码、删除、导出账户表 | 查看 3，管理 4 |
+| 站点内容 | 站点配置可视化编辑（品牌、Hero、导航、公告、板块、章节、页脚，共 50+ 字段），保存 / 重置 / 导出 | 4 |
+| 游戏目录 | 游戏条目可视化编辑、扫描 `game/` 目录、条目统计、导出 `games.json` | 编辑 4 |
+| 我的账户 | 修改自己的名称（不可重名）与密码（需验证当前密码） | 登录即可 |
+| 权限说明 | 权限分级与能力对照表 | 3 |
+
+低于权限 3 的账户进入管理中心时只会看到锁定提示，未登录时提示先登录；权限 4 才能看到
+「扫描 / 重新读取 / 保存 / 导出 / 新增账户」等写操作按钮。
+
+## 内容如何生效（重要）
+
+三份数据各有两种来源：
+
+| 数据 | 浏览器本地（`localStorage`） | 仓库文件 |
+|---|---|---|
+| 站点内容 | `leoljs.site.v1`，超级管理员在页面编辑后点「保存」 | `assets/data/site.json` |
+| 游戏目录 | `leoljs.catalog.v1`，编辑 / 扫描后点「保存」 | `game/games.json` |
+| 账户 | `leoljs.accounts.v1`，所有账户操作都会写入本地 | `assets/data/accounts.json`（可选，仅首次访问且本地无数据时读取） |
+
+因为站点没有后端，**页面上的改动只对当前这台浏览器生效**。要让所有访客看到新内容，请在管理
+中心点「导出」，把 JSON 提交到仓库覆盖对应文件；其他访客在本地没有覆盖数据时会读到仓库版本。
+「概览 → 重新读取仓库 JSON」会丢弃本地覆盖并重新拉取文件。
+
+## 添加一个新游戏
+
+1. 把网页游戏放进 `game/<文件夹>/`，入口命名为 `index.html`（`game/o/` 就是这种结构）。
+2. 打开「管理中心 → 游戏目录」，点「扫描目录」校验条目对应的目录是否可访问；缺少条目时点
+   「新增条目」补齐（名称、简介、标签、排序、精选、隐藏）。
+3. 点「保存」只在本机生效；再点「导出」得到 `games.json`，提交后覆盖 `game/games.json`，
+   之后所有访客都能在游戏中心看到它。
+
+> 纯前端无法枚举服务器目录：当服务器未开启目录索引时，扫描会退化为「逐条校验清单中已存在的
+> 条目」并在结果中说明原因，这属于预期行为，不会误删条目。
+
+## 数据文件格式（节选）
+
+`assets/data/site.json`
+- `brand`：站点名与 Logo 字母；`hero`：标语、标题、副标题与两个按钮
+- `nav[]`：导航项（`label` / `href` / `cap`）；`announcement`：公告开关与文本
+- `blocks[]`：主页板块（`kind` 为 games / music / link）；`sections[]`：文本章节；`footer`：页脚与链接
+- 每一项都可以用 `cap` 指定最低权限，低于该权限的访客看不到对应入口
+
+`game/games.json`
+- `games[]`：`id`、`name`、`folder`、`path`、`desc`、`tags[]`、`cover`、`order`、`featured`、`hidden`
+
+`assets/data/accounts.json`
+- `{ version, type: 'leoljs-accounts', exportedAt, note, accounts[] }`
+- 每条包含 `name`、`perm`、`salt`、`hash`、`hashAlg`、`legacy`、`note`、`isDefault`、`createdAt`
+- 只存加盐摘要，没有明文；文件中至少要有一个权限 4 的账户，否则整份文件会被忽略
+- 仓库里的这份文件是公开的（默认密码也写在文档里），请把它当作「共享账户表」的起点，
+  并在管理中心改掉密码后重新导出
+
+## 维护提示
+
+- 重置本机数据：浏览器控制台执行 `localStorage.clear()`（或删除上述四个键）后刷新页面。
+- 忘记密码：只能清掉 `leoljs.accounts.v1` 重新加载默认账户表（仓库版 `accounts.json` 或内置默认账户）。
+- 整站都是静态文件，直接把仓库根目录作为 GitHub Pages 的发布目录即可，无需构建步骤。
+
+

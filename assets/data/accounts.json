@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "type": "leoljs-accounts",
+  "exportedAt": "2026-10-04T08:54:42.424Z",
+  "note": "可另存为 assets/data/accounts.json 作为站点默认账户表（哈希为加盐摘要，但仍建议不要公开真实密码）",
+  "accounts": [
+    {
+      "name": "admin",
+      "perm": 4,
+      "salt": "653b10f5a72587aa",
+      "hash": "245fcf020724004ee27efc856aa2456bc4f45f619df4bfc556f157ccb9dac6ce",
+      "hashAlg": "sha256",
+      "legacy": "afbb4d0c46089f8c",
+      "note": "内置默认管理员",
+      "isDefault": true,
+      "createdAt": 1791104082424
+    }
+  ]
+}

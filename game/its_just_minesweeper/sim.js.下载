@@ -1,0 +1,310 @@
+// i18n helpers (shared runtime i18n.js); no-ops without it
+const T_ = s => (typeof window !== 'undefined' && window.I18N ? I18N.t(s) : s);
+const F_ = (k, ...a) => (typeof window !== 'undefined' && window.I18N ? I18N.f(k, ...a) : k.replace(/\{(\d)\}/g, (_, i) => a[i]));
+// IT'S JUST MINESWEEPER - pure simulation (no DOM). Classic script, exposes window.SIM.
+// Six boards. All of them are real Minesweeper: a rectangle, honest numbers, no guessing needed.
+// What changes is how the game treats you: the lights, the heartbeat, the mirror, the blinking, the face.
+(function (G) {
+'use strict';
+
+const LEVELS = [
+  { id: 'beginner', w: 8, h: 8, m: 8, twist: 'none', title: 'Minesweeper', tab: 'Minesweeper', after: null },
+  { id: 'night', w: 9, h: 9, m: 10, twist: 'night', title: 'Minesweeper', tab: 'Minesweeper', after: 'Did someone turn off the lights?' },
+  { id: 'heart', w: 9, h: 9, m: 10, twist: 'heart', title: 'Minesweeper', tab: 'can you hear it', after: 'Can you hear it?' },
+  { id: 'mirror', w: 9, h: 9, m: 10, twist: 'mirror', title: 'repeewseniM', tab: 'repeewseniM', after: 'You are doing it backwards.' },
+  { id: 'moves', w: 10, h: 10, m: 14, twist: 'moves', title: 'Minesweeper (Not Responding)', tab: "don't blink", after: "Don't blink." },
+  { id: 'face', w: 16, h: 14, m: 26, twist: 'face', title: 'Me', tab: 'let me see you', after: 'Let me see your face.' },
+];
+const BLINK_EVERY = 6.5, BLINK_WARN = 1.2;
+const HINT_IDLE = 14;         // seconds of no progress before the smiley glances at a safe tile
+const FINAL_WAIT = 24;
+
+function rng(seed) {
+  let s = (seed >>> 0) || 0x9e3779b9;
+  return () => { s ^= s << 13; s >>>= 0; s ^= s >>> 17; s ^= s << 5; s >>>= 0; return s / 4294967296; };
+}
+
+// ---------- board ----------
+// the last board: its mines are a face (two eyes, a grin), plus a few strays. You only see it when it's cleared.
+const FACE = [[2, 1], [3, 1], [2, 2], [3, 2], [8, 1], [9, 1], [8, 2], [9, 2],
+  [0, 5], [11, 5], [1, 6], [10, 6], [2, 7], [3, 7], [8, 7], [9, 7], [4, 8], [5, 8], [6, 8], [7, 8]];
+function newBoard(L) {
+  const n = L.w * L.h;
+  return {
+    w: L.w, h: L.h, m: L.m, mask: new Array(n).fill(true), face: L.twist === 'face',
+    mine: new Array(n).fill(false), rev: new Array(n).fill(false), flag: new Array(n).fill(false), num: new Array(n).fill(0),
+    started: false, flash: new Array(n).fill(0),
+  };
+}
+function nbrs(B, i) {
+  const x = i % B.w, y = (i / B.w) | 0, out = [];
+  for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+    if (!dx && !dy) continue;
+    const X = x + dx, Y = y + dy;
+    if (X < 0 || Y < 0 || X >= B.w || Y >= B.h) continue;
+    const j = Y * B.w + X;
+    if (B.mask[j]) out.push(j);
+  }
+  return out;
+}
+function recount(B) { for (let i = 0; i < B.mine.length; i++) B.num[i] = B.mask[i] ? nbrs(B, i).filter(j => B.mine[j]).length : 0; }
+function cells(B) { const a = []; for (let i = 0; i < B.mask.length; i++) if (B.mask[i]) a.push(i); return a; }
+
+// logic solver over what the player can see: returns {safe:Set, mine:Set} deducible now
+function deduce(B) {
+  const safe = new Set(), mine = new Set();
+  const cons = [];
+  let changed = true, guard = 0;
+  while (changed && guard++ < 60) {
+    changed = false;
+    cons.length = 0;
+    for (let i = 0; i < B.rev.length; i++) {
+      if (!B.rev[i] || B.mine[i]) continue;
+      const un = [], k = { n: B.num[i] };
+      for (const j of nbrs(B, i)) {
+        if (B.rev[j]) continue;
+        if (mine.has(j)) k.n--; else if (!safe.has(j)) un.push(j);
+      }
+      if (!un.length) continue;
+      k.u = un;
+      if (k.n === 0) { for (const j of un) { safe.add(j); } changed = true; continue; }
+      if (k.n === un.length) { for (const j of un) mine.add(j); changed = true; continue; }
+      cons.push(k);
+    }
+    if (changed) continue;
+    // subset rule
+    for (let a = 0; a < cons.length && !changed; a++) for (let b = 0; b < cons.length && !changed; b++) {
+      if (a === b) continue;
+      const A = cons[a], Bc = cons[b];
+      if (A.u.length >= Bc.u.length) continue;
+      if (!A.u.every(j => Bc.u.includes(j))) continue;
+      const rest = Bc.u.filter(j => !A.u.includes(j)), dn = Bc.n - A.n;
+      if (dn === 0) { for (const j of rest) safe.add(j); changed = true; }
+      else if (dn === rest.length) { for (const j of rest) mine.add(j); changed = true; }
+    }
+  }
+  return { safe, mine };
+}
+// flood reveal from i (no events)
+function openFrom(B, i, list) {
+  const stack = [i];
+  while (stack.length) {
+    const c = stack.pop();
+    if (B.rev[c] || B.flag[c] || !B.mask[c]) continue;
+    B.rev[c] = true; list.push(c);
+    if (B.num[c] === 0 && !B.mine[c]) for (const j of nbrs(B, c)) if (!B.rev[j]) stack.push(j);
+  }
+}
+// can pure logic clear the board from here? (first < 0 = from what is already revealed)
+function solvable(B, first) {
+  const T = { w: B.w, h: B.h, mask: B.mask, mine: B.mine, num: B.num, rev: first < 0 ? B.rev.slice() : new Array(B.mine.length).fill(false), flag: new Array(B.mine.length).fill(false) };
+  if (first >= 0) openFrom(T, first, []);
+  const total = cells(B).filter(i => !B.mine[i]).length;
+  for (let guard = 0; guard < 400; guard++) {
+    const d = deduce(T);
+    let prog = false;
+    for (const j of d.safe) if (!T.rev[j]) { openFrom(T, j, []); prog = true; }
+    if (!prog) break;
+  }
+  return T.rev.filter((r, i) => r && !B.mine[i]).length === total;
+}
+function plant(B, first, rnd) {
+  const ban = new Set([first, ...nbrs(B, first)]);
+  const pool = cells(B).filter(i => !ban.has(i));
+  for (let tries = 0; tries < 3000; tries++) {
+    B.mine.fill(false);
+    let placed = 0;
+    if (B.face) {   // put the face somewhere the first click isn't
+      const ox = Math.floor(rnd() * (B.w - 11)), oy = Math.floor(rnd() * (B.h - 8));
+      const at = FACE.map(([x, y]) => (oy + y) * B.w + ox + x);
+      if (at.some(i => ban.has(i))) continue;
+      for (const i of at) B.mine[i] = true;
+      B.faceAt = at;
+      placed = at.length;
+    }
+    const p = pool.filter(i => !B.mine[i]);
+    for (let k = placed; k < B.m; k++) { const r = Math.floor(rnd() * p.length); B.mine[p[r]] = true; p.splice(r, 1); }
+    recount(B);
+    if (solvable(B, first)) return tries;
+  }
+  return -1;
+}
+
+// ---------- game ----------
+function emit(S, type, o) { const e = Object.assign({ type }, o || {}); S.ev.push(e); return e; }
+function newGame(seed, level) {
+  const S = {
+    seed: seed || 1, rnd: rng(seed || 1), level: level || 0, phase: 'play', t: 0, ev: [],
+    B: null, timer: 0, idle: 0, hint: -1, blink: 0, blinkWarn: false, story: null, fin: null, ending: '', deaths: 0,
+    stats: { deaths: 0, time: 0, resets: 0, hints: 0, loops: 0 }, loop: 0, levelDeaths: 0,
+  };
+  startLevel(S, S.level);
+  return S;
+}
+function L(S) { return LEVELS[S.level]; }
+function startLevel(S, i) {
+  S.level = i; S.phase = 'play'; S.B = newBoard(LEVELS[i]);
+  S.timer = 0; S.idle = 0; S.hint = -1; S.blink = 0; S.blinkWarn = false; S.story = null; S.levelDeaths = 0;
+  emit(S, 'level', { level: i, id: LEVELS[i].id, title: LEVELS[i].title, tab: LEVELS[i].tab });
+}
+function resetBoard(S, why) {
+  S.B = newBoard(L(S)); S.phase = 'play'; S.timer = 0; S.idle = 0; S.hint = -1; S.blink = 0; S.blinkWarn = false;
+  emit(S, 'reset', { why });
+}
+function flagsLeft(S) { return S.B.m - S.B.flag.filter(Boolean).length; }
+
+function reveal(S, i) {
+  if (S.phase !== 'play') return 'no';
+  const B = S.B;
+  if (!B.mask[i] || B.flag[i]) return 'no';
+  if (B.rev[i]) return chord(S, i);
+  if (!B.started) {
+    B.started = true;
+    plant(B, i, S.rnd);
+    emit(S, 'start', {});
+  }
+  if (B.mine[i]) return die(S, i);
+  const list = [];
+  openFrom(B, i, list);
+  S.idle = 0; S.hint = -1;
+  emit(S, 'open', { i, cells: list, big: list.length > 6 });
+  checkWin(S);
+  return 'open';
+}
+function chord(S, i) {
+  const B = S.B;
+  if (!B.rev[i] || B.num[i] === 0) return 'no';
+  const nb = nbrs(B, i);
+  const flags = nb.filter(j => B.flag[j]).length;
+  if (flags !== B.num[i]) { emit(S, 'chordNo', { i }); return 'no'; }
+  const list = [];
+  for (const j of nb) {
+    if (B.rev[j] || B.flag[j]) continue;
+    if (B.mine[j]) return die(S, j);
+    openFrom(B, j, list);
+  }
+  if (list.length) { S.idle = 0; S.hint = -1; emit(S, 'open', { i, cells: list, big: list.length > 6, chord: true }); checkWin(S); }
+  return 'chord';
+}
+function flag(S, i) {
+  if (S.phase !== 'play') return 'no';
+  const B = S.B;
+  if (!B.mask[i] || B.rev[i]) return 'no';
+  B.flag[i] = !B.flag[i];
+  emit(S, B.flag[i] ? 'flag' : 'unflag', { i });
+  return 'flag';
+}
+function die(S, i) {
+  const B = S.B;
+  S.phase = 'dead'; S.deathT = 0; S.stats.deaths++; S.levelDeaths++;
+  B.boom = i;
+  for (let j = 0; j < B.mine.length; j++) if (B.mine[j]) B.rev[j] = true;
+  emit(S, 'boom', { i, level: S.level, scare: S.level > 0 });
+  return 'boom';
+}
+function checkWin(S) {
+  const B = S.B;
+  for (let i = 0; i < B.mine.length; i++) if (B.mask[i] && !B.mine[i] && !B.rev[i]) return false;
+  for (let i = 0; i < B.mine.length; i++) if (B.mine[i]) B.flag[i] = true;
+  S.stats.time += S.timer;
+  if (L(S).twist === 'face') {
+    S.phase = 'final'; S.fin = { t: 0 };
+    emit(S, 'finalStart', {});
+  } else {
+    S.phase = 'won';
+    const next = LEVELS[S.level + 1];
+    S.story = { t: 0, text: S.level === 0 ? 'You win!' : 'You win.', next: next ? next.after : null, time: S.timer };
+    emit(S, 'win', { level: S.level, time: S.timer });
+  }
+  return true;
+}
+// the OK button on a dialog
+function ok(S) {
+  if (S.phase === 'won') {
+    if (S.story.stage !== 2 && S.story.next) { S.story.stage = 2; S.story.t = 0; emit(S, 'whisper', { text: S.story.next }); return; }
+    startLevel(S, S.level + 1);
+    return;
+  }
+  if (S.phase === 'dead' && S.deathT > 0.9) { resetBoard(S, 'retry'); return; }
+}
+// the smiley button
+function smiley(S) {
+  if (S.phase === 'final') return endGame(S, 'swept');
+  if (S.phase === 'play' || S.phase === 'dead') { if (S.phase === 'play') S.stats.resets++; resetBoard(S, 'smiley'); return; }
+}
+function endGame(S, which) {
+  S.phase = 'ending'; S.ending = which; S.endT = 0;
+  emit(S, 'ending', { which });
+}
+function again(S) {
+  // the loop ending: back to the start, but it remembers
+  S.loop++; S.stats.loops++;
+  startLevel(S, 0);
+  emit(S, 'loop', { loop: S.loop });
+}
+
+// "moves" level: when the smiley blinks, a mine you can't see crawls one square.
+// Only squares nothing revealed is touching take part, so every number on screen stays true,
+// and the move is only kept if the board can still be cleared by logic.
+function blinkMove(S) {
+  const B = S.B;
+  const seen = B.rev.map((r, i) => r || nbrs(B, i).some(j => B.rev[j]));
+  const free = i => !seen[i] && !B.flag[i] && i !== S.hint;
+  const moves = [];
+  for (let i = 0; i < B.mine.length; i++) {
+    if (!B.mine[i] || !free(i)) continue;          // a flag pins a mine down
+    for (const j of nbrs(B, i)) if (!B.mine[j] && free(j)) moves.push([i, j]);
+  }
+  for (let k = moves.length - 1; k > 0; k--) { const r = Math.floor(S.rnd() * (k + 1)); [moves[k], moves[r]] = [moves[r], moves[k]]; }
+  for (const [from, to] of moves.slice(0, 24)) {
+    B.mine[from] = false; B.mine[to] = true; recount(B);
+    if (solvable(B, -1)) { B.flash[from] = 1; B.flash[to] = 1; emit(S, 'blink', { moved: true, from, to }); return; }
+    B.mine[from] = true; B.mine[to] = false; recount(B);
+  }
+  emit(S, 'blink', { moved: false });
+}
+// patient = the player has been stuck a while: point at a logical move too, not only when logic runs out
+function findHint(S, patient) {
+  const B = S.B;
+  const d = deduce(B);
+  const logical = [...d.safe].filter(j => !B.rev[j] && !B.flag[j]);
+  if (logical.length) return patient ? logical[Math.floor(S.rnd() * logical.length)] : -1;
+  // pick a genuinely safe covered tile touching the revealed area
+  const opts = [];
+  for (let i = 0; i < B.mine.length; i++) if (B.mask[i] && !B.rev[i] && !B.mine[i] && !B.flag[i] && nbrs(B, i).some(j => B.rev[j])) opts.push(i);
+  return opts.length ? opts[Math.floor(S.rnd() * opts.length)] : -1;
+}
+// Start > Shut Down: only works once the face is cleared
+function shutdown(S) { if (S.phase === 'final') endGame(S, 'off'); }
+
+function step(S, dt) {
+  S.t += dt;
+  const B = S.B;
+  for (let i = 0; i < B.flash.length; i++) if (B.flash[i] > 0) B.flash[i] = Math.max(0, B.flash[i] - dt * 0.8);
+  if (S.phase === 'play' && B.started) {
+    S.timer += dt; S.idle += dt;
+    if (L(S).twist === 'moves') {
+      S.blink += dt;
+      if (!S.blinkWarn && S.blink >= BLINK_EVERY - BLINK_WARN) { S.blinkWarn = true; emit(S, 'blinkWarn', {}); }
+      if (S.blink >= BLINK_EVERY) { S.blink = 0; S.blinkWarn = false; blinkMove(S); }
+    }
+    const idleNeed = S.level === 0 ? 7 : HINT_IDLE;
+    if (S.hint < 0 && S.idle > idleNeed && S.t >= (S.hintNext || 0)) {
+      S.hintNext = S.t + 1;
+      const h = findHint(S, S.idle > (S.level === 0 ? 7 : 22));
+      if (h >= 0) { S.hint = h; S.stats.hints++; emit(S, 'hint', { i: h }); }
+    }
+  } else if (S.phase === 'dead') {
+    S.deathT += dt;
+  } else if (S.phase === 'won') {
+    S.story.t += dt;
+  } else if (S.phase === 'final') {
+    S.fin.t += dt;
+    if (S.fin.t >= FINAL_WAIT) endGame(S, 'again');
+  } else if (S.phase === 'ending') {
+    S.endT += dt;
+  }
+}
+
+G.SIM = { LEVELS, BLINK_EVERY, BLINK_WARN, FINAL_WAIT, newGame, step, reveal, flag, chord, ok, smiley, again, shutdown, startLevel, resetBoard, nbrs, deduce, flagsLeft, FACE };
+})(typeof window !== 'undefined' ? window : globalThis);

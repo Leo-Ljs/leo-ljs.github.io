@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#7c5cff">
+<title>管理中心 · Leo 的网页小站</title>
+<meta name="description" content="站点管理中心：查看站点状态与账户列表，超级管理员可管理账户、站点内容与游戏目录。">
+<link rel="stylesheet" href="../assets/css/leo-ui.css">
+</head>
+<body class="leo-page">
+<nav id="leo-nav" class="leo-nav"></nav>
+
+<main class="leo-wrap">
+  <section class="leo-section" style="margin-top:0">
+    <header>
+      <h2>管理中心 <span class="count" id="who">—</span></h2>
+      <span class="hint" id="perm-hint"></span>
+    </header>
+  </section>
+
+  <!-- 权限不足（<3）时的锁定提示落点 -->
+  <div id="locked" class="leo-hidden"></div>
+
+  <div id="admin-body" class="leo-hidden">
+    <div class="leo-tabs" id="tabs">
+      <button class="leo-tab active" type="button" data-tab="overview">概览</button>
+      <button class="leo-tab" type="button" data-tab="accounts">账户管理</button>
+      <button class="leo-tab" type="button" data-tab="site">站点内容</button>
+      <button class="leo-tab" type="button" data-tab="catalog">游戏目录</button>
+      <button class="leo-tab" type="button" data-tab="me">我的账户</button>
+      <button class="leo-tab" type="button" data-tab="perms">权限说明</button>
+    </div>
+
+    <section class="leo-card pad" data-pane="overview"></section>
+    <section class="leo-card pad leo-hidden" data-pane="accounts"></section>
+    <section class="leo-card pad leo-hidden" data-pane="site"></section>
+    <section class="leo-card pad leo-hidden" data-pane="catalog"></section>
+    <section class="leo-card pad leo-hidden" data-pane="me"></section>
+    <section class="leo-card pad leo-hidden" data-pane="perms"></section>
+  </div>
+
+  <footer class="leo-footer" id="footer"></footer>
+</main>
+
+<script src="../assets/js/leo-auth.js"></script>
+<script src="../assets/js/leo-site.js"></script>
+<script src="../assets/js/leo-catalog.js"></script>
+<script src="../assets/js/leo-ui.js"></script>
+<script>
+/*!
+ * 管理中心逻辑：概览 / 账户管理 / 站点内容 / 游戏目录 / 我的账户 / 权限说明。
+ * 查看需要权限 ≥3，账户与内容编辑需要权限 4，未登录或权限不足时显示锁定提示。
+ */
+(function () {
+  'use strict';
+  var A = window.LEOAuth, S = window.LEOSite, C = window.LEOCatalog, U = window.LEOUI;
+  if (!A || !U) { try { console.error('[admin] 需要先加载 leo-auth.js 与 leo-ui.js'); } catch (e) { /* ignore */ } return; }
+
+  var esc = U.esc;
+  var $ = function (sel) { return document.querySelector(sel); };
+  var pane = function (name) { return document.querySelector('[data-pane="' + name + '"]'); };
+  var active = 'overview';
+  var mounted = { accounts: false, site: false, catalog: false, me: false, perms: false };
+
+  function hrefFor(href) { return U.abs(href || './'); }
+  function statTile(icon, title, value, extra) {
+    return '<div class="leo-tile"><span class="ico">' + icon + '</span>' +
+      '<div class="ttl">' + esc(title) + '</div>' +
+      '<div class="desc"><b>' + value + '</b>' + (extra ? '<br>' + extra : '') + '</div></div>';
+  }
+
+  /* ======================== 概览 ======================== */
+  function renderOverview() {
+    var me = A.me();
+    var st = A.storageInfo();
+    var gstat = C ? C.stats() : null;
+    var last = C ? C.getLastScan() : null;
+    var host = pane('overview');
+    host.innerHTML =
+      '<div class="leo-grid">' +
+        statTile('👤', '当前账户', me ? esc(me.name) : '未登录（访客）',
+          me ? U.badge(me.perm) : '游客权限 0，只能浏览主页公开内容') +
+        statTile('👥', '账户总数', A.count() + ' 个',
+          '哈希算法：' + st.hashAlg + (st.secure ? '（加密安全）' : '（file:// 降级模式）')) +
+        statTile('🎮', '游戏总数', gstat ? (gstat.total + ' 个') : '—',
+          gstat ? ('可见 ' + gstat.visible + ' · 隐藏 ' + gstat.hidden + ' · 精选 ' + gstat.featured) : '目录模块未加载') +
+        statTile('📄', '站点内容来源', esc(S ? S.sourceLabel() : '—'),
+          'JSON 落盘路径：assets/data/site.json') +
+        statTile('🗂️', '游戏目录来源', esc(C ? C.sourceLabel() : '未加载'),
+          '仓库文件：' + esc(C ? C.FILE : 'game/games.json')) +
+        statTile('📡', '最近一次扫描', last ? (last.changed ? '发现更新' : '无变化') : '尚未扫描',
+          last ? (esc(U.fmtTime(last.at)) + ' · ' + esc(C.scanSummary(last))) : '在「游戏目录」标签里可扫描 game/ 目录') +
+      '</div>' +
+      toolbarHtml() +
+      noteHtml();
+  }
+
+  /* ======================== 概览：快捷操作 / 说明 ======================== */
+  function toolbarHtml() {
+    var me = A.me();
+    return '<div class="leo-divider"></div>' +
+      '<div class="leo-edit-item"><div class="head"><span class="name">快捷操作</span>' +
+        '<span class="leo-muted" style="font-size:12px">' + (me ? '当前账户：' + esc(me.name) : '当前为访客') + '</span></div>' +
+      '<div class="ops">' +
+        '<a class="leo-btn sm" href="' + esc(U.abs('./')) + '">主页</a>' +
+        '<a class="leo-btn sm" href="' + esc(U.abs('game/')) + '">游戏中心</a>' +
+        '<a class="leo-btn sm" href="' + esc(U.abs('music/')) + '">音乐播放器</a>' +
+        (A.can('editCatalog') ? '<button class="leo-btn sm" type="button" data-scan>扫描 game/ 目录</button>' : '') +
+        '<button class="leo-btn sm" type="button" data-reload>重新读取仓库 JSON</button>' +
+        '<button class="leo-btn sm" type="button" data-go-tab="accounts">账户管理</button>' +
+        (A.can('editSite') ? '<button class="leo-btn sm" type="button" data-go-tab="site">编辑站点内容</button>' : '') +
+        (A.can('editCatalog') ? '<button class="leo-btn sm" type="button" data-go-tab="catalog">编辑游戏目录</button>' : '') +
+      '</div><div class="leo-msg" data-ov-msg></div></div>';
+  }
+
+  function noteHtml() {
+    return '<div class="leo-edit-item"><div class="head"><span class="name">纯静态站点说明</span></div>' +
+      '<p class="leo-muted" style="font-size:12.5px;line-height:1.9;margin:0">' +
+      '本站没有后端：账户表与内容修改会先保存在<b>当前浏览器</b>（localStorage）。' +
+      '要让所有访问者看到改动，请在对应编辑器里点「导出」下载 JSON，' +
+      '再放回仓库的 assets/data/site.json、game/games.json 并提交。' +
+      '因此这套账户系统用于「站点内容管理」的分级授权，而不是服务器级的安全边界。</p></div>';
+  }
+
+  function setOvMsg(text, type) {
+    var p = pane('overview');
+    var m = p ? p.querySelector('[data-ov-msg]') : null;
+    if (!m) return;
+    m.className = 'leo-msg ' + (type || 'info') + (text ? ' show' : '');
+    m.textContent = text || '';
+  }
+  /* ======================== 账户管理（权限 ≥3 查看，权限 4 修改） ======================== */
+  function renderAccounts() {
+    var node = pane('accounts');
+    if (!U.gate('viewAccounts', node)) return;
+    U.panels.accounts(node);
+  }
+
+  /* ======================== 站点内容（权限 4） ======================== */
+  function renderSite() {
+    var node = pane('site');
+    if (!S || !S.mountEditor) {
+      node.innerHTML = '<p class="leo-empty">站点配置模块（leo-site.js）未加载。</p>';
+      return;
+    }
+    if (!A.can('editSite')) {
+      if (mounted.site) { mounted.site = false; node.innerHTML = ''; }
+      U.renderLock(node, 'editSite');
+      return;
+    }
+    if (mounted.site) return;
+    node.innerHTML = '';
+    mounted.site = true;
+    S.mountEditor(node, { onSave: function () { renderChrome(); renderOverview(); } });
+  }
+
+  /* ======================== 游戏目录（权限 4） ======================== */
+  function renderCatalog() {
+    var node = pane('catalog');
+    if (!C || !C.mountEditor) {
+      node.innerHTML = '<p class="leo-empty">游戏目录模块（leo-catalog.js）未加载。</p>';
+      return;
+    }
+    if (!A.can('editCatalog')) {
+      if (mounted.catalog) { mounted.catalog = false; node.innerHTML = ''; }
+      U.renderLock(node, 'editCatalog');
+      return;
+    }
+    if (mounted.catalog) return;
+    node.innerHTML = '';
+    mounted.catalog = true;
+    C.mountEditor(node, { onChange: function () { renderChrome(); } });
+  }
+
+  /* ======================== 我的账户 / 权限说明 ======================== */
+  function renderMe() { U.panels.account(pane('me')); }
+  function renderPerms() { U.panels.perms(pane('perms')); }
+
+  /* ======================== 标签页切换 ======================== */
+  var TABS = ['overview', 'accounts', 'site', 'catalog', 'me', 'perms'];
+
+  function renderPane(name) {
+    if (name === 'overview') { renderOverview(); return; }
+    if (name === 'accounts') { renderAccounts(); return; }
+    if (name === 'site') { renderSite(); return; }
+    if (name === 'catalog') { renderCatalog(); return; }
+    if (name === 'me') { renderMe(); return; }
+    if (name === 'perms') { renderPerms(); }
+  }
+
+  function showTab(name, opts) {
+    if (TABS.indexOf(name) < 0) name = 'overview';
+    active = name;
+    var tabs = document.querySelectorAll('.leo-tab');
+    for (var i = 0; i < tabs.length; i++) {
+      tabs[i].classList.toggle('active', tabs[i].getAttribute('data-tab') === name);
+    }
+    TABS.forEach(function (t) {
+      var p = pane(t);
+      if (p) p.classList.toggle('leo-hidden', t !== name);
+    });
+    if (A.can('viewAccounts')) renderPane(name);
+    if (!opts || opts.hash !== false) {
+      try {
+        if (location.hash !== '#' + name) history.replaceState(null, '', '#' + name);
+      } catch (e) { /* ignore */ }
+    }
+  }
+  /* ======================== 顶栏 / 页脚 / 门控 ======================== */
+  function renderChrome() {
+    var me = A.me();
+    var who = $('#who');
+    if (who) who.textContent = me ? me.name : '未登录（访客）';
+    var hint = $('#perm-hint');
+    if (hint) {
+      var pm = A.permMeta(A.perm());
+      hint.textContent = '当前权限 P' + pm.level + ' · ' + pm.short +
+        '（' + (me ? pm.desc : '仅可浏览公开内容') + '）';
+    }
+    var foot = $('#footer');
+    if (foot) {
+      var st = A.storageInfo();
+      foot.innerHTML = '<p>Leo 的网页小站 · 管理中心 · 账户 ' + st.count + ' 个 · 摘要算法 ' + esc(st.hashAlg) +
+        (st.secure ? '' : '（file:// 降级模式）') + '<br>' +
+        '站点内容：' + esc(S ? S.sourceLabel() : '站点模块未加载') +
+        ' · 游戏目录：' + esc(C ? C.sourceLabel() : '目录模块未加载') + '</p>';
+    }
+  }
+
+  /* 权限不足时隐藏整个后台主体，只显示锁定提示 */
+  function setBody(show) {
+    var body = $('#admin-body'), locked = $('#locked');
+    if (body) body.classList.toggle('leo-hidden', !show);
+    if (locked) {
+      locked.classList.toggle('leo-hidden', show);
+      if (show) locked.innerHTML = '';
+    }
+  }
+
+  function refreshAll() {
+    var ok = A.can('viewAccounts');
+    setBody(ok);
+    if (!ok) U.renderLock($('#locked'), 'viewAccounts');
+    renderChrome();
+    if (ok) renderPane(active);
+  }
+
+  /* ======================== 数据读取 / 扫描 ======================== */
+  function readRepo() {
+    var jobs = [];
+    if (S && S.load) jobs.push(S.load());
+    if (C && C.load) jobs.push(C.load());
+    return Promise.all(jobs)['catch'](function () { return null; });
+  }
+
+  function reloadData(fromToolbar) {
+    mounted.site = false;
+    mounted.catalog = false;
+    return readRepo().then(function () {
+      refreshAll();
+      if (fromToolbar) U.toast('已重新读取仓库 JSON', 'ok');
+    });
+  }
+
+  function runScan() {
+    if (!C || !C.scan) return;
+    if (!A.can('editCatalog')) { U.guard('editCatalog'); return; }
+    setOvMsg('正在扫描 game/ 目录，请稍候…', 'info');
+    var node = pane('catalog');
+    var bar = node ? node.querySelector('.leo-editor-bar .title') : null;
+    if (bar) bar.textContent = '正在扫描 game/ 目录…';
+    C.scan({ refresh: false }).then(function (res) {
+      var text = C.scanSummary(res);
+      /* 先重绘面板，再写提示，避免概览面板被重绘后提示被清空 */
+      mounted.catalog = false;
+      refreshAll();
+      if (active === 'overview') setOvMsg('扫描完成 · ' + text, res.changed ? 'ok' : 'info');
+      U.toast(res.changed ? '扫描完成：发现更新' : '扫描完成：无变化', 'ok');
+    })['catch'](function (e) {
+      setOvMsg('扫描失败：' + e, 'err');
+      U.toast('扫描失败：' + e, 'err');
+    });
+  }
+
+  /* ======================== 事件绑定 / 启动 ======================== */
+  function initHash() {
+    var h = (location.hash || '').replace('#', '');
+    return (h && TABS.indexOf(h) >= 0) ? h : 'overview';
+  }
+
+  function wireEvents() {
+    var tabs = $('#tabs');
+    if (tabs) tabs.addEventListener('click', function (ev) {
+      var b = ev.target.closest('[data-tab]');
+      if (b) showTab(b.getAttribute('data-tab'));
+    });
+    var body = $('#admin-body');
+    if (body) body.addEventListener('click', function (ev) {
+      var go = ev.target.closest('[data-go-tab]');
+      if (go) { showTab(go.getAttribute('data-go-tab')); return; }
+      if (ev.target.closest('[data-reload]')) { reloadData(true); return; }
+      if (ev.target.closest('[data-scan]')) { runScan(); }
+    });
+    window.addEventListener('hashchange', function () {
+      var h = (location.hash || '').replace('#', '');
+      if (h && TABS.indexOf(h) >= 0 && h !== active) showTab(h, { hash: false });
+    });
+  }
+
+  wireEvents();
+  U.mountNav({ onAuth: function () { refreshAll(); } });
+  A.on(function () { refreshAll(); });
+  A.ready.then(function () { return readRepo(); }).then(function () {
+    active = initHash();
+    showTab(active, { hash: false });
+    refreshAll();
+  })['catch'](function (e) {
+    try { console.error('[admin] 初始化失败', e); } catch (err) { /* ignore */ }
+    refreshAll();
+  });
+})();
+</script>
+</body>
+</html>
+

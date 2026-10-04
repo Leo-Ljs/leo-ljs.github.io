@@ -3,978 +3,246 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Leo Music</title>
-<style>
-  :root{
-    --accent:#7c5cff;
-    --accent2:#22d3ee;
-    --text:#eceaf6;
-    --muted:#8e8ca6;
-    --card:rgba(255,255,255,.055);
-    --border:rgba(255,255,255,.09);
-  }
-
-  *{ box-sizing:border-box; }
-  html,body{ height:100%; }
-
-  body{
-    margin:0;
-    min-height:100%;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    padding:28px 18px;
-    color:var(--text);
-    background:#07070d;
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
-    -webkit-font-smoothing:antialiased;
-    position:relative;
-    overflow-x:hidden;
-  }
-
-  /* 背景光晕 */
-  body::before{
-    content:"";
-    position:fixed;
-    inset:-20%;
-    z-index:-1;
-    background:
-      radial-gradient(620px circle at 15% 18%, rgba(124,92,255,.38), transparent 62%),
-      radial-gradient(720px circle at 86% 76%, rgba(34,211,238,.22), transparent 62%),
-      radial-gradient(520px circle at 62% 8%, rgba(236,72,153,.16), transparent 60%);
-    animation:drift 22s ease-in-out infinite alternate;
-  }
-  @keyframes drift{ to{ transform:translate3d(-3%,-2%,0) scale(1.08); } }
-
-  .app{
-    width:min(980px,100%);
-    display:grid;
-    grid-template-columns:340px minmax(0,1fr);
-    gap:20px;
-    align-items:stretch;
-  }
-  @media (max-width:820px){
-    .app{ grid-template-columns:1fr; }
-  }
-
-  .card{
-    background:var(--card);
-    border:1px solid var(--border);
-    border-radius:24px;
-    backdrop-filter:blur(18px) saturate(150%);
-    -webkit-backdrop-filter:blur(18px) saturate(150%);
-    box-shadow:0 24px 60px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.06);
-  }
-
-  /* ============ 左侧播放器 ============ */
-  .player{
-    padding:26px 24px 22px;
-    display:flex;
-    flex-direction:column;
-    gap:18px;
-  }
-
-  .disc-wrap{ display:grid; place-items:center; padding:4px 0 2px; }
-
-  .disc{
-    width:190px;
-    height:190px;
-    border-radius:50%;
-    position:relative;
-    display:grid;
-    place-items:center;
-    background:
-      radial-gradient(circle at 50% 50%, #15151f 0 34%, transparent 34.6%),
-      repeating-radial-gradient(circle at 50% 50%, #0f0f17 0 2px, #16161f 2px 4px);
-    box-shadow:0 22px 48px rgba(0,0,0,.6), inset 0 0 0 1px rgba(255,255,255,.06);
-    animation:spin 14s linear infinite;
-    animation-play-state:paused;
-  }
-  .disc::after{
-    content:"";
-    position:absolute;
-    inset:0;
-    border-radius:50%;
-    background:conic-gradient(from 200deg, rgba(255,255,255,.16), transparent 22%, transparent 74%, rgba(255,255,255,.08));
-    pointer-events:none;
-  }
-  .disc.playing{ animation-play-state:running; }
-  @keyframes spin{ to{ transform:rotate(360deg); } }
-
-  .label{
-    width:34%;
-    aspect-ratio:1;
-    border-radius:50%;
-    display:grid;
-    place-items:center;
-    color:#fff;
-    font-size:20px;
-    font-weight:700;
-    background:linear-gradient(135deg,var(--accent),var(--accent2));
-    box-shadow:0 0 0 5px rgba(0,0,0,.45), 0 0 26px rgba(124,92,255,.55);
-    position:relative;
-    z-index:1;
-    user-select:none;
-  }
-
-  .meta{ text-align:center; min-height:50px; }
-  .meta .title{
-    margin:0 0 6px;
-    font-size:19px;
-    font-weight:650;
-    letter-spacing:.2px;
-    white-space:nowrap;
-    overflow:hidden;
-    text-overflow:ellipsis;
-  }
-  .meta .artist{
-    margin:0;
-    font-size:13px;
-    color:var(--muted);
-    white-space:nowrap;
-    overflow:hidden;
-    text-overflow:ellipsis;
-  }
-
-  /* 进度条 */
-  .progress-wrap{ display:flex; flex-direction:column; gap:7px; }
-  .time{
-    display:flex;
-    justify-content:space-between;
-    font-size:12px;
-    color:var(--muted);
-    font-variant-numeric:tabular-nums;
-  }
-
-  input[type=range]{
-    -webkit-appearance:none;
-    appearance:none;
-    width:100%;
-    height:6px;
-    padding:0;
-    border:none;
-    border-radius:999px;
-    outline:none;
-    cursor:pointer;
-    background-image:
-      linear-gradient(90deg,var(--accent),var(--accent2)),
-      linear-gradient(rgba(255,255,255,.12),rgba(255,255,255,.12));
-    background-size:var(--p,0%) 100%, 100% 100%;
-    background-position:left center, left center;
-    background-repeat:no-repeat;
-  }
-  input[type=range]::-webkit-slider-thumb{
-    -webkit-appearance:none;
-    width:14px; height:14px;
-    border:none;
-    border-radius:50%;
-    background:#fff;
-    cursor:pointer;
-    box-shadow:0 0 0 4px rgba(124,92,255,.25);
-    transition:box-shadow .2s;
-  }
-  input[type=range]::-webkit-slider-thumb:hover{ box-shadow:0 0 0 6px rgba(124,92,255,.38); }
-  input[type=range]::-moz-range-thumb{
-    width:14px; height:14px; border:none; border-radius:50%;
-    background:#fff; cursor:pointer;
-  }
-
-  /* 控制按钮 */
-  .controls{ display:flex; align-items:center; justify-content:center; gap:14px; }
-
-  .icon-btn{
-    width:42px; height:42px;
-    border-radius:50%;
-    border:1px solid transparent;
-    background:transparent;
-    color:var(--muted);
-    cursor:pointer;
-    display:grid;
-    place-items:center;
-    transition:.2s;
-  }
-  .icon-btn svg{ width:20px; height:20px; fill:currentColor; display:block; }
-  .icon-btn:hover{ color:#fff; background:rgba(255,255,255,.08); }
-  .icon-btn.active{
-    color:var(--accent2);
-    background:rgba(34,211,238,.12);
-    border-color:rgba(34,211,238,.35);
-  }
-
-  .play-btn{
-    width:60px; height:60px;
-    border:none;
-    border-radius:50%;
-    cursor:pointer;
-    color:#fff;
-    display:grid;
-    place-items:center;
-    background:linear-gradient(135deg,var(--accent),var(--accent2));
-    box-shadow:0 10px 26px rgba(124,92,255,.5);
-    transition:transform .18s ease, box-shadow .18s ease;
-  }
-  .play-btn svg{ width:26px; height:26px; fill:currentColor; display:block; }
-  .play-btn:hover{ transform:scale(1.06); box-shadow:0 14px 32px rgba(124,92,255,.66); }
-  .play-btn:active{ transform:scale(.97); }
-
-  .volume{ display:flex; align-items:center; gap:10px; }
-  .volume svg{ width:18px; height:18px; fill:var(--muted); flex:none; }
-  .volume input{ flex:1; }
-
-  /* ============ 右侧歌单 ============ */
-  .list-card{
-    padding:20px 20px 14px;
-    display:flex;
-    flex-direction:column;
-    min-height:0;
-    max-height:560px;
-  }
-  @media (max-width:820px){
-    .list-card{ max-height:none; }
-    .playlist{ max-height:340px; }
-  }
-
-  .list-head{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    margin-bottom:12px;
-  }
-  .list-head h2{
-    margin:0;
-    font-size:15px;
-    font-weight:650;
-    display:flex;
-    align-items:center;
-    gap:8px;
-  }
-  .badge{
-    font-size:11px;
-    font-weight:600;
-    padding:2px 8px;
-    border-radius:999px;
-    color:#c9bcff;
-    background:rgba(124,92,255,.22);
-  }
-  .text-btn{
-    border:none;
-    background:none;
-    color:var(--muted);
-    font-size:12px;
-    padding:6px 10px;
-    border-radius:8px;
-    cursor:pointer;
-    transition:.2s;
-  }
-  .text-btn:hover{ color:#fff; background:rgba(255,255,255,.08); }
-
-  .search{ margin-bottom:12px; }
-  .search input{
-    width:100%;
-    padding:10px 14px;
-    font-size:13px;
-    color:var(--text);
-    border-radius:12px;
-    border:1px solid var(--border);
-    background:rgba(255,255,255,.05);
-    outline:none;
-    transition:.2s;
-    font-family:inherit;
-  }
-  .search input::placeholder{ color:#6f6d85; }
-  .search input:focus{
-    border-color:rgba(124,92,255,.6);
-    background:rgba(124,92,255,.08);
-    box-shadow:0 0 0 3px rgba(124,92,255,.15);
-  }
-
-  .playlist{
-    list-style:none;
-    margin:0;
-    padding:0 6px 0 0;
-    flex:1;
-    min-height:0;
-    overflow-y:auto;
-    scrollbar-width:thin;
-  }
-  .playlist::-webkit-scrollbar{ width:8px; }
-  .playlist::-webkit-scrollbar-track{ background:transparent; }
-  .playlist::-webkit-scrollbar-thumb{
-    background:rgba(255,255,255,.14);
-    border-radius:99px;
-  }
-  .playlist::-webkit-scrollbar-thumb:hover{ background:rgba(255,255,255,.26); }
-
-  .track{
-    display:flex;
-    align-items:center;
-    gap:12px;
-    padding:9px 12px;
-    border-radius:14px;
-    cursor:pointer;
-    transition:background .18s, box-shadow .18s;
-  }
-  .track:hover{ background:rgba(255,255,255,.055); }
-  .track.active{
-    background:linear-gradient(90deg,rgba(124,92,255,.28),rgba(34,211,238,.10));
-    box-shadow:inset 0 0 0 1px rgba(124,92,255,.35);
-  }
-
-  .track .idx{
-    width:22px;
-    flex:none;
-    text-align:center;
-    font-size:12px;
-    color:var(--muted);
-    font-variant-numeric:tabular-nums;
-    display:grid;
-    place-items:center;
-  }
-  .track.active .idx{ color:#c4b5fd; }
-
-  .track .info{ flex:1; min-width:0; }
-  .track .name{
-    display:block;
-    font-size:14px;
-    white-space:nowrap;
-    overflow:hidden;
-    text-overflow:ellipsis;
-  }
-  .track.active .name{ font-weight:600; color:#fff; }
-  .track .sub{
-    display:block;
-    margin-top:2px;
-    font-size:12px;
-    color:var(--muted);
-    white-space:nowrap;
-    overflow:hidden;
-    text-overflow:ellipsis;
-  }
-  .track .dur{
-    flex:none;
-    font-size:12px;
-    color:var(--muted);
-    font-variant-numeric:tabular-nums;
-  }
-
-  /* 正在播放的小均衡器 */
-  .bars{ display:inline-flex; align-items:flex-end; gap:2px; height:12px; }
-  .bars i{
-    width:2.5px;
-    border-radius:2px;
-    background:var(--accent2);
-    transform-origin:bottom;
-    animation:eq .9s ease-in-out infinite;
-  }
-  .bars i:nth-child(1){ height:60%; animation-delay:-.2s; }
-  .bars i:nth-child(2){ height:100%; animation-delay:-.5s; }
-  .bars i:nth-child(3){ height:42%; animation-delay:-.8s; }
-  @keyframes eq{
-    0%,100%{ transform:scaleY(.35); }
-    50%{ transform:scaleY(1); }
-  }
-
-  .empty{
-    padding:34px 10px;
-    text-align:center;
-    color:var(--muted);
-    font-size:13px;
-    line-height:1.9;
-  }
-  .empty code{
-    color:#c4b5fd;
-    background:rgba(124,92,255,.14);
-    padding:2px 6px;
-    border-radius:6px;
-    font-size:12px;
-  }
-
-  .status{
-    margin:10px 2px 0;
-    min-height:16px;
-    font-size:12px;
-    color:var(--muted);
-  }
-
-  @media (prefers-reduced-motion:reduce){
-    *, *::before, *::after{ animation-duration:.001ms !important; animation-iteration-count:1 !important; }
-  }
-</style>
+<meta name="theme-color" content="#7c5cff">
+<title>Leo 的网页小站</title>
+<meta name="description" content="Leo 的网页小站：网页小游戏中心与音乐播放器，支持按权限等级分级的浏览器内可视化内容管理。">
+<link rel="stylesheet" href="assets/css/leo-ui.css">
 </head>
-<body>
+<body class="leo-page">
+<nav id="leo-nav" class="leo-nav"></nav>
 
-<div class="app">
+<main class="leo-wrap">
+  <!-- 顶部主视觉（由 site.json / 内置默认 + 本地配置驱动） -->
+  <section class="leo-hero" id="hero"></section>
 
-  <!-- 左侧：播放器 -->
-  <section class="card player">
-    <div class="disc-wrap">
-      <div class="disc" id="disc">
-        <div class="label" id="discLabel">♪</div>
-      </div>
-    </div>
+  <!-- 站点公告 -->
+  <div id="announce"></div>
 
-    <div class="meta">
-      <h1 class="title" id="title">未选择歌曲</h1>
-      <p class="artist" id="artist">从右侧列表中选择一首开始播放</p>
-    </div>
-
-    <div class="progress-wrap">
-      <input type="range" id="progress" min="0" max="1000" step="1" value="0" aria-label="播放进度">
-      <div class="time">
-        <span id="cur">0:00</span>
-        <span id="dur">0:00</span>
-      </div>
-    </div>
-
-    <div class="controls">
-      <button class="icon-btn" id="shuffleBtn" title="随机播放" aria-label="随机播放">
-        <svg viewBox="0 0 24 24"><path d="M10.59 9.17 5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"/></svg>
-      </button>
-
-      <button class="icon-btn" id="prevBtn" title="上一首" aria-label="上一首">
-        <svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/></svg>
-      </button>
-
-      <button class="play-btn" id="playBtn" title="播放 / 暂停" aria-label="播放或暂停">
-        <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-      </button>
-
-      <button class="icon-btn" id="nextBtn" title="下一首" aria-label="下一首">
-        <svg viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
-      </button>
-
-      <button class="icon-btn" id="repeatBtn" title="列表循环" aria-label="循环模式">
-        <svg viewBox="0 0 24 24"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg>
-      </button>
-    </div>
-
-    <div class="volume">
-      <svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
-      <input type="range" id="volume" min="0" max="100" step="1" value="80" aria-label="音量">
-    </div>
+  <!-- 板块入口 -->
+  <section class="leo-section" id="blocks-sec">
+    <header>
+      <h2>站点板块 <span class="count" id="blocks-count">—</span></h2>
+      <span class="hint" id="site-source"></span>
+    </header>
+    <div class="leo-grid" id="blocks"></div>
   </section>
 
-  <!-- 右侧：播放列表 -->
-  <section class="card list-card">
-    <div class="list-head">
-      <h2>播放列表 <span class="badge" id="count">0</span></h2>
-      <button class="text-btn" id="reloadBtn">重新扫描</button>
-    </div>
-
-    <div class="search">
-      <input type="search" id="search" placeholder="搜索歌曲…" autocomplete="off">
-    </div>
-
-    <ul class="playlist" id="playlist"></ul>
-    <p class="status" id="status">准备中…</p>
+  <!-- 精选游戏（读取游戏目录） -->
+  <section class="leo-section" id="featured-sec">
+    <header>
+      <h2>精选游戏 <span class="count" id="featured-count">—</span></h2>
+      <a class="leo-btn sm" href="game/">查看全部 →</a>
+    </header>
+    <div class="leo-grid" id="featured"></div>
   </section>
 
-</div>
+  <!-- 权限 4 内联编辑器（未登录 / 权限不足时自动隐藏） -->
+  <section class="leo-section leo-hidden" id="editor-sec">
+    <header>
+      <h2>可视化编辑主页 <span class="count">需要权限 4</span></h2>
+      <span class="hint">修改先保存在当前浏览器，点「导出 site.json」可提交到仓库让所有访问者生效</span>
+    </header>
+    <div class="leo-card pad" id="site-editor"></div>
+  </section>
 
+  <!-- 拓展板块（可在编辑器里增删） -->
+  <div id="sections"></div>
+
+  <footer class="leo-footer" id="footer"></footer>
+</main>
+
+<script src="assets/js/leo-auth.js"></script>
+<script src="assets/js/leo-site.js"></script>
+<script src="assets/js/leo-catalog.js"></script>
+<script src="assets/js/leo-ui.js"></script>
 <script>
+/*!
+ * 主页逻辑：渲染 site.json 配置（hero / 公告 / 板块 / 拓展板块 / 页脚）、
+ * 精选游戏，并在权限 4 时挂载 LEOSite.mountEditor 做可视化编辑。
+ */
 (function () {
   'use strict';
+  var A = window.LEOAuth, S = window.LEOSite, C = window.LEOCatalog, U = window.LEOUI;
+  if (!A || !U) { try { console.error('[home] 需要先加载 leo-auth.js 与 leo-ui.js'); } catch (e) { /* ignore */ } return; }
 
-  /* ============ 配置区 ============ */
-  const MUSIC_DIR = '/music/';         // 音乐目录（根目录下）
-  const AUDIO_RE  = /\.(mp3|flac|wav|ogg|oga|m4a|aac|opus|webm|weba)$/i;
+  var esc = U.esc;
+  var $ = function (sel) { return document.querySelector(sel); };
+  var editorMounted = false;
+  var FALLBACK = { brand: {}, hero: {}, blocks: [], sections: [], footer: { links: [] } };
 
-  // 如果服务器没有开启目录索引，无法自动扫描时，可在这里手动补充曲目：
-  const MANUAL_TRACKS = [
-  { title: 'Music 1', artist: '', url: '/music/music1.mp3' },
-  { title: 'Music 2', artist: '', url: '/music/music2.mp3' },
-];
-  /* ================================ */
-
-  const ICON = {
-    play: '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>',
-    pause: '<svg viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>',
-    repeat: '<svg viewBox="0 0 24 24"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg>',
-    repeatOne: '<svg viewBox="0 0 24 24"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4zm-4-2V9h-1l-2 1v1h1.5v4H13z"/></svg>'
-  };
-
-  /* ---------- DOM ---------- */
-  const $ = (id) => document.getElementById(id);
-  const disc       = $('disc');
-  const discLabel  = $('discLabel');
-  const titleEl    = $('title');
-  const artistEl   = $('artist');
-  const progressEl = $('progress');
-  const curEl      = $('cur');
-  const durEl      = $('dur');
-  const playBtn    = $('playBtn');
-  const prevBtn    = $('prevBtn');
-  const nextBtn    = $('nextBtn');
-  const shuffleBtn = $('shuffleBtn');
-  const repeatBtn  = $('repeatBtn');
-  const volumeEl   = $('volume');
-  const playlistEl = $('playlist');
-  const searchEl   = $('search');
-  const countEl    = $('count');
-  const statusEl   = $('status');
-  const reloadBtn  = $('reloadBtn');
-
-  /* ---------- 音频对象 ---------- */
-  const audio = new Audio();
-  audio.preload = 'metadata';
-
-  /* ---------- 状态 ---------- */
-  const state = {
-    tracks: [],
-    index: -1,
-    playing: false,
-    shuffle: false,
-    repeat: 'all',    // off | all | one
-    query: ''
-  };
-
-  /* ================= 工具函数 ================= */
-  const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => (
-    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
-  ));
-
-  function fmt(sec) {
-    if (!isFinite(sec) || sec < 0) sec = 0;
-    const h = Math.floor(sec / 3600);
-    const m = Math.floor((sec % 3600) / 60);
-    const s = Math.floor(sec % 60);
-    const pad = (n) => String(n).padStart(2, '0');
-    return h ? `${h}:${pad(m)}:${pad(s)}` : `${m}:${pad(s)}`;
+  /* ======================== 通用渲染工具 ======================== */
+  function hrefFor(href) { return U.abs(href || './'); }
+  function coverUrl(g) {
+    var c = String((g && g.cover) || '').trim();
+    if (!c) return '';
+    if (/^[a-z][a-z0-9+.-]*:/i.test(c) || c.charAt(0) === '/') return c;
+    var base = (C && C.folderUrl) ? C.folderUrl(g.folder) : hrefFor('game/' + g.folder + '/');
+    return base + c.replace(/^\.?\//, '');
+  }
+  function initial(g) {
+    var n = String((g && g.name) || '?').trim();
+    return (n.charAt(0) || '?').toUpperCase();
+  }
+  function gameCard(g) {
+    var url = (C && C.gameUrl) ? C.gameUrl(g) : hrefFor('game/' + g.folder + '/');
+    var cover = coverUrl(g);
+    return '<article class="leo-game">' +
+      '<a class="cover" href="' + esc(url) + '">' +
+        (cover
+          ? '<img src="' + esc(cover) + '" alt="' + esc(g.name) + ' 封面" loading="lazy">'
+          : '<span class="fallback">' + esc(initial(g)) + '</span>') +
+        (g.featured ? '<span class="flag">精选</span>' : '') +
+      '</a>' +
+      '<div class="body">' +
+        '<div class="ttl">' + esc(g.name) + (g.hidden ? ' <span class="leo-perm p0">已隐藏</span>' : '') + '</div>' +
+        '<div class="desc">' + esc(g.desc || '暂无简介，可在管理中心的「游戏目录」里补充。') + '</div>' +
+        (g.tags && g.tags.length
+          ? '<div class="tags">' + g.tags.map(function (t) { return '<span class="tag">' + esc(t) + '</span>'; }).join('') + '</div>'
+          : '') +
+        '<div class="actions"><a class="leo-btn sm primary" href="' + esc(url) + '">开始游戏</a>' +
+        '<span class="path">game/' + esc(g.folder) + '/</span></div>' +
+      '</div></article>';
+  }
+  function actBtn(text, href, cap, cls) {
+    if (!text) return '';
+    var allowed = A.can(cap);
+    return '<button class="leo-btn ' + (cls || '') + '" type="button" data-goto="' + esc(href || '') +
+      '" data-cap="' + esc(cap) + '">' + (allowed ? '' : '🔒 ') + esc(text) + '</button>';
   }
 
-  function setRangeFill(el, pct) {
-    el.style.setProperty('--p', Math.max(0, Math.min(100, pct)) + '%');
+  /* ======================== 各区块渲染 ======================== */
+  function renderHero(cfg) {
+    var h = cfg.hero || {};
+    $('#hero').innerHTML =
+      (h.tagline ? '<span class="tagline">✦ ' + esc(h.tagline) + '</span>' : '') +
+      '<h1>' + esc(h.title || '欢迎') + '</h1>' +
+      '<p>' + esc(h.subtitle || '') + '</p>' +
+      '<div class="actions">' +
+        actBtn(h.primaryText, h.primaryHref, 'viewGames', 'primary') +
+        actBtn(h.secondaryText, h.secondaryHref, 'useMusic') +
+      '</div>';
   }
 
-  function setStatus(msg) { statusEl.textContent = msg || ''; }
-
-  /* 从文件名解析 标题 / 歌手 */
-  function parseName(url) {
-    let file = url.split('/').pop().split(/[?#]/)[0];
-    try { file = decodeURIComponent(file); } catch (e) { /* ignore */ }
-
-    let name = file.replace(/\.[^.]+$/, '').trim();
-    name = name.replace(/^\s*\d{1,3}\s*[._\-、)]\s*/, '');   // 去掉开头序号
-    name = name.replace(/_+/g, ' ').replace(/\s{2,}/g, ' ').trim();
-
-    let artist = '';
-    const parts = name.split(/\s+-\s+/);
-    if (parts.length >= 2) {
-      artist = parts[0].trim();
-      name = parts.slice(1).join(' - ').trim();
-    }
-    return { title: name || file, artist };
+  function renderAnnounce(cfg) {
+    var a = cfg.announcement || {};
+    var box = $('#announce');
+    if (!a.enabled || !a.text) { box.innerHTML = ''; return; }
+    box.innerHTML = '<div class="leo-card pad" style="margin-top:16px">' +
+      '<div class="leo-kv"><b>📢 ' + esc(a.title || '站点公告') + '</b></div>' +
+      '<p style="margin:9px 0 0;color:var(--muted);font-size:13.5px;line-height:1.9">' + esc(a.text) + '</p></div>';
   }
 
-  /* ================= 目录扫描 ================= */
-  function extractUrls(text, base) {
-    const found = new Set();
-
-    // 1) 解析 HTML 目录索引中的 <a href>
-    try {
-      const doc = new DOMParser().parseFromString(text, 'text/html');
-      doc.querySelectorAll('a[href]').forEach((a) => {
-        const raw = a.getAttribute('href');
-        if (raw && AUDIO_RE.test(raw.split(/[?#]/)[0])) found.add(raw);
-      });
-    } catch (e) { /* ignore */ }
-
-    // 2) 兜底：直接从文本里找文件名（JSON / 纯文本目录）
-    if (!found.size) {
-      const re = /[^\s"'<>()\[\],;]+\.(?:mp3|flac|wav|ogg|oga|m4a|aac|opus|webm|weba)/gi;
-      (text.match(re) || []).forEach((m) => found.add(m));
-    }
-
-    const baseUrl = new URL(base, location.href);
-    return Array.from(found)
-      .map((h) => {
-        try { return new URL(h, baseUrl).href; }
-        catch (e) { return null; }
-      })
-      .filter((u) => u && AUDIO_RE.test(u.split(/[?#]/)[0]));
+  function renderBlocks(cfg) {
+    var blocks = (cfg.blocks || []).filter(function (b) { return b.enabled !== false; });
+    var stats = (C && C.stats) ? C.stats() : { visible: 0 };
+    $('#blocks').innerHTML = blocks.map(function (b) {
+      var cap = b.cap || 'viewHome';
+      var allowed = A.can(cap);
+      var extra = (b.kind === 'games')
+        ? '<span class="leo-muted leo-nowrap" style="font-size:11.5px">' + stats.visible + ' 个游戏</span>' : '';
+      var inner = '<span class="ico">' + esc(b.icon || '📄') + '</span>' +
+        '<div class="ttl">' + esc(b.title || '未命名板块') + extra + '</div>' +
+        '<div class="desc">' + esc(b.desc || '') + '</div>' +
+        '<div class="foot">' + (b.kind === 'note' ? '说明板块' : (allowed ? '点击进入 →' : '需要更高权限')) + '</div>' +
+        (allowed || b.kind === 'note' ? '' : '<span class="lock">🔒</span>');
+      if (b.kind === 'note' || !b.href) return '<div class="leo-tile dim">' + inner + '</div>';
+      return '<a class="leo-tile' + (allowed ? '' : ' dim locked') + '" href="' + esc(hrefFor(b.href)) +
+        '" data-cap="' + esc(cap) + '">' + inner + '</a>';
+    }).join('') || '<p class="leo-empty">暂无启用的板块，可在权限 4 的编辑器里新增。</p>';
+    $('#blocks-count').textContent = blocks.length + ' 个';
+    $('#site-source').textContent = (S && S.sourceLabel) ? ('内容来源：' + S.sourceLabel()) : '';
   }
 
-  async function scanMusicFolder() {
-    setStatus('正在扫描 ' + MUSIC_DIR + ' …');
-    playlistEl.innerHTML = '<li class="empty">扫描中…</li>';
-
-    let urls = [];
-    try {
-      const res = await fetch(MUSIC_DIR, { cache: 'no-store' });
-      if (res.ok) {
-        const text = await res.text();
-        urls = extractUrls(text, MUSIC_DIR);
-      }
-    } catch (err) {
-      console.warn('[music] 目录扫描失败：', err);
-    }
-
-    // 去重 + 自然排序
-    urls = Array.from(new Set(urls)).sort((a, b) =>
-      a.localeCompare(b, 'zh-Hans-CN', { numeric: true, sensitivity: 'base' })
-    );
-
-    if (urls.length) {
-      state.tracks = urls.map((url) => {
-        const info = parseName(url);
-        return { url, title: info.title, artist: info.artist, duration: 0 };
-      });
-    } else if (MANUAL_TRACKS.length) {
-      state.tracks = MANUAL_TRACKS.map((t) => ({
-        url: t.url,
-        title: t.title || parseName(t.url).title,
-        artist: t.artist || parseName(t.url).artist,
-        duration: 0
-      }));
-    } else {
-      state.tracks = [];
-    }
-
-    // 重置播放状态
-    state.index = -1;
-    state.playing = false;
-    disc.classList.remove('playing');
-    playBtn.innerHTML = ICON.play;
-    audio.removeAttribute('src');
-    audio.load();
-
-    titleEl.textContent = '未选择歌曲';
-    artistEl.textContent = '从右侧列表中选择一首开始播放';
-    discLabel.textContent = '♪';
-    curEl.textContent = '0:00';
-    durEl.textContent = '0:00';
-    progressEl.value = 0;
-    setRangeFill(progressEl, 0);
-
-    countEl.textContent = state.tracks.length;
-    renderPlaylist();
-
-    if (state.tracks.length) {
-      setStatus(`共 ${state.tracks.length} 首歌曲`);
-    } else {
-      setStatus('未找到音频文件');
-      playlistEl.innerHTML =
-        '<li class="empty">没有扫描到音频文件 😕<br>' +
-        '请确认服务器开启了目录索引，<br>' +
-        '或在代码顶部的 <code>MANUAL_TRACKS</code> 中手动添加曲目。</li>';
-    }
-  }
-
-  /* ================= 渲染列表 ================= */
-  function renderPlaylist() {
-    const q = state.query.trim().toLowerCase();
-    const items = state.tracks
-      .map((t, i) => ({ t, i }))
-      .filter(({ t }) => !q || (t.title + ' ' + (t.artist || '')).toLowerCase().includes(q));
-
-    if (!items.length) {
-      playlistEl.innerHTML = `<li class="empty">${state.tracks.length ? '没有匹配的歌曲' : '暂无歌曲'}</li>`;
+  function renderFeatured() {
+    var box = $('#featured');
+    if (!C) { $('#featured-sec').classList.add('leo-hidden'); return; }
+    var list = C.list({ sort: 'order', featuredFirst: true }).slice(0, 4);
+    if (!list.length) {
+      box.innerHTML = '<p class="leo-empty">游戏目录还是空的：把游戏放进 <code>game/新的文件夹/index.html</code>，' +
+        '再到「游戏中心」点一次「扫描 game/ 目录」即可收录。</p>';
+      $('#featured-count').textContent = '0 个';
       return;
     }
-
-    const frag = document.createDocumentFragment();
-    items.forEach(({ t, i }) => {
-      const li = document.createElement('li');
-      const isActive = i === state.index;
-      li.className = 'track' + (isActive ? ' active' : '');
-      li.dataset.index = i;
-
-      const idxHtml = (isActive && state.playing)
-        ? '<span class="bars"><i></i><i></i><i></i></span>'
-        : String(i + 1);
-
-      li.innerHTML =
-        `<span class="idx">${idxHtml}</span>` +
-        `<span class="info">` +
-          `<span class="name">${escapeHtml(t.title)}</span>` +
-          (t.artist ? `<span class="sub">${escapeHtml(t.artist)}</span>` : '') +
-        `</span>` +
-        `<span class="dur">${t.duration ? fmt(t.duration) : ''}</span>`;
-
-      frag.appendChild(li);
-    });
-
-    playlistEl.innerHTML = '';
-    playlistEl.appendChild(frag);
+    box.innerHTML = list.map(gameCard).join('');
+    var st = C.stats();
+    $('#featured-count').textContent = st.visible + ' / ' + st.total + ' 个';
   }
 
-  /* ================= 播放控制 ================= */
-  function updateNowPlaying() {
-    const t = state.tracks[state.index];
-    if (!t) {
-      titleEl.textContent = '未选择歌曲';
-      artistEl.textContent = '从右侧列表中选择一首开始播放';
-      discLabel.textContent = '♪';
-      return;
-    }
-    titleEl.textContent = t.title;
-    artistEl.textContent = t.artist || '未知艺术家';
-    discLabel.textContent = (t.title.trim()[0] || '♪').toUpperCase();
-    document.title = `${t.title} · Leo Music`;
+  function renderSections(cfg) {
+    $('#sections').innerHTML = (cfg.sections || []).filter(function (s) { return s.enabled !== false; }).map(function (s) {
+      return '<section class="leo-section"><header><h2>' + esc(s.title || '说明') + '</h2></header>' +
+        '<div class="leo-card pad"><p style="margin:0;color:var(--muted);font-size:13.5px;line-height:1.9">' +
+        esc(s.text || '') + '</p></div></section>';
+    }).join('');
+  }
 
-    if ('mediaSession' in navigator) {
-      try {
-        navigator.mediaSession.metadata = new MediaMetadata({
-          title: t.title,
-          artist: t.artist || '未知艺术家',
-          album: 'Leo Music'
-        });
-      } catch (e) { /* ignore */ }
+  function renderFooter(cfg) {
+    var f = cfg.footer || {};
+    var links = (f.links || []).map(function (l) {
+      return '<a href="' + esc(hrefFor(l.href)) + '">' + esc(l.label || l.href) + '</a>';
+    }).join('');
+    $('#footer').innerHTML = '<div>' + esc(f.text || '') + '</div><div class="links">' + links + '</div>';
+  }
+
+  function renderEditor() {
+    var sec = $('#editor-sec');
+    if (!A.can('editSite')) { sec.classList.add('leo-hidden'); return; }
+    sec.classList.remove('leo-hidden');
+    if (!editorMounted && S && S.mountEditor) {
+      editorMounted = true;
+      S.mountEditor('#site-editor', { onSave: function () { renderAll(); } });
     }
   }
 
-  function playTrack(i, autoplay = true) {
-    if (i < 0 || i >= state.tracks.length) return;
-    state.index = i;
-    const t = state.tracks[i];
-
-    audio.src = t.url;
-    if (autoplay) {
-      audio.play().catch((err) => {
-        setStatus('播放失败：' + (err && err.message ? err.message : err));
-      });
-    }
-    updateNowPlaying();
-    renderPlaylist();
-    scrollToActive();
+  /* ======================== 总渲染 + 交互 ======================== */
+  function renderAll() {
+    var cfg = (S && S.get) ? S.get() : FALLBACK;
+    var brand = cfg.brand || {};
+    document.title = (brand.name || 'Leo 的网页小站') + ' · 主页';
+    renderHero(cfg);
+    renderAnnounce(cfg);
+    renderBlocks(cfg);
+    renderFeatured();
+    renderSections(cfg);
+    renderFooter(cfg);
+    renderEditor();
   }
 
-  function scrollToActive() {
-    const el = playlistEl.querySelector('.track.active');
-    if (el) el.scrollIntoView({ block: 'nearest' });
+  /* hero / 板块里的按钮与卡片：权限不足时给出提示并引导登录 */
+  function onGatedClick(ev) {
+    var hit = ev.target.closest('[data-cap]');
+    if (!hit) return;
+    var cap = hit.getAttribute('data-cap');
+    if (A.can(cap)) return;
+    ev.preventDefault();
+    U.guard(cap);
   }
-
-  function togglePlay() {
-    if (state.index < 0) {
-      if (state.tracks.length) playTrack(0);
-      return;
-    }
-    if (audio.paused) {
-      audio.play().catch((err) => setStatus('播放失败：' + (err && err.message ? err.message : err)));
-    } else {
-      audio.pause();
-    }
-  }
-
-  function nextIndex() {
-    const n = state.tracks.length;
-    if (!n) return -1;
-
-    if (state.shuffle && n > 1) {
-      let i;
-      do { i = Math.floor(Math.random() * n); } while (i === state.index);
-      return i;
-    }
-
-    let i = state.index + 1;
-    if (i >= n) {
-      if (state.repeat === 'all') i = 0;
-      else return -1;
-    }
-    return i;
-  }
-
-  function playNext(auto = false) {
-    const n = state.tracks.length;
-    if (!n) return;
-
-    if (auto && state.repeat === 'one' && state.index >= 0) {
-      audio.currentTime = 0;
-      audio.play().catch(() => {});
-      return;
-    }
-
-    const i = nextIndex();
-    if (i < 0) {
-      audio.pause();
-      setStatus('播放列表已结束');
-      return;
-    }
-    playTrack(i);
-  }
-
-  function playPrev() {
-    const n = state.tracks.length;
-    if (!n) return;
-
-    // 播放超过 3 秒则回到开头
-    if (state.index >= 0 && audio.currentTime > 3) {
-      audio.currentTime = 0;
-      return;
-    }
-
-    let i;
-    if (state.shuffle && n > 1) {
-      do { i = Math.floor(Math.random() * n); } while (i === state.index);
-    } else {
-      i = state.index - 1;
-      if (i < 0) i = state.repeat === 'all' ? n - 1 : 0;
-    }
-    playTrack(i);
-  }
-
-  function updateModeButtons() {
-    shuffleBtn.classList.toggle('active', state.shuffle);
-    repeatBtn.classList.toggle('active', state.repeat !== 'off');
-    repeatBtn.innerHTML = state.repeat === 'one' ? ICON.repeatOne : ICON.repeat;
-    repeatBtn.title = state.repeat === 'one'
-      ? '单曲循环'
-      : (state.repeat === 'all' ? '列表循环' : '循环关闭');
-  }
-
-  /* ================= 事件绑定 ================= */
-
-  // 播放列表点击
-  playlistEl.addEventListener('click', (e) => {
-    const li = e.target.closest('.track');
-    if (!li) return;
-    const i = Number(li.dataset.index);
-    if (i === state.index) togglePlay();
-    else playTrack(i);
+  document.querySelector('main').addEventListener('click', onGatedClick);
+  $('#hero').addEventListener('click', function (ev) {
+    var btn = ev.target.closest('[data-goto]');
+    if (!btn) return;
+    var cap = btn.getAttribute('data-cap');
+    if (!A.can(cap)) { U.guard(cap); return; }
+    location.href = hrefFor(btn.getAttribute('data-goto'));
   });
 
-  // 搜索
-  searchEl.addEventListener('input', () => {
-    state.query = searchEl.value;
-    renderPlaylist();
+  /* ======================== 启动 ======================== */
+  U.mountNav({ host: '#leo-nav', onAuth: function () { renderAll(); } });
+  A.on(renderAll);
+  if (S && S.on) S.on(renderAll);
+  if (C && C.on) C.on(renderAll);
+  renderAll();
+
+  A.ready.then(function () {
+    return Promise.all([S && S.load ? S.load() : null, C && C.load ? C.load() : null]);
+  }).then(function () {
+    renderAll();
+  }).catch(function (err) {
+    try { console.error('[home] 初始化失败', err); } catch (e) { /* ignore */ }
   });
-
-  // 重新扫描
-  reloadBtn.addEventListener('click', scanMusicFolder);
-
-  // 播放/暂停
-  playBtn.addEventListener('click', togglePlay);
-  prevBtn.addEventListener('click', playPrev);
-  nextBtn.addEventListener('click', () => playNext(false));
-
-  // 随机
-  shuffleBtn.addEventListener('click', () => {
-    state.shuffle = !state.shuffle;
-    updateModeButtons();
-  });
-
-  // 循环模式
-  repeatBtn.addEventListener('click', () => {
-    state.repeat = state.repeat === 'all' ? 'one'
-                 : state.repeat === 'one' ? 'off' : 'all';
-    updateModeButtons();
-  });
-
-  // 进度条拖动
-  progressEl.addEventListener('input', () => {
-    setRangeFill(progressEl, progressEl.value / 10);
-    const d = audio.duration;
-    if (isFinite(d) && d > 0) curEl.textContent = fmt(progressEl.value / 1000 * d);
-  });
-  progressEl.addEventListener('change', () => {
-    const d = audio.duration;
-    if (isFinite(d) && d > 0) audio.currentTime = progressEl.value / 1000 * d;
-  });
-
-  // 音量
-  volumeEl.addEventListener('input', () => {
-    audio.volume = volumeEl.value / 100;
-    setRangeFill(volumeEl, volumeEl.value);
-    try { localStorage.setItem('leo-music-volume', String(audio.volume)); } catch (e) {}
-  });
-
-  // 音频事件
-  audio.addEventListener('play', () => {
-    state.playing = true;
-    disc.classList.add('playing');
-    playBtn.innerHTML = ICON.pause;
-    renderPlaylist();
-  });
-
-  audio.addEventListener('pause', () => {
-    state.playing = false;
-    disc.classList.remove('playing');
-    playBtn.innerHTML = ICON.play;
-    renderPlaylist();
-  });
-
-  audio.addEventListener('loadedmetadata', () => {
-    const t = state.tracks[state.index];
-    if (t && isFinite(audio.duration)) {
-      t.duration = audio.duration;
-      renderPlaylist();
-    }
-    updateProgress();
-  });
-
-  audio.addEventListener('timeupdate', updateProgress);
-
-  audio.addEventListener('ended', () => playNext(true));
-
-  audio.addEventListener('error', () => {
-    if (!audio.src) return;
-    const t = state.tracks[state.index];
-    setStatus(`无法播放「${t ? t.title : ''}」，可能格式不受支持或文件不存在`);
-  });
-
-  function updateProgress() {
-    const d = audio.duration;
-    const cur = audio.currentTime || 0;
-
-    if (isFinite(d) && d > 0) {
-      progressEl.value = Math.round((cur / d) * 1000);
-      setRangeFill(progressEl, (cur / d) * 100);
-      durEl.textContent = fmt(d);
-    } else {
-      progressEl.value = 0;
-      setRangeFill(progressEl, 0);
-      durEl.textContent = '0:00';
-    }
-    curEl.textContent = fmt(cur);
-  }
-
-  // 键盘快捷键
-  document.addEventListener('keydown', (e) => {
-    const tag = e.target.tagName;
-    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
-
-    if (e.code === 'Space') {
-      e.preventDefault();
-      togglePlay();
-    } else if (e.code === 'ArrowRight') {
-      playNext(false);
-    } else if (e.code === 'ArrowLeft') {
-      playPrev();
-    }
-  });
-
-  // 媒体会话（系统媒体控制）
-  if ('mediaSession' in navigator) {
-    try {
-      navigator.mediaSession.setActionHandler('play', () => audio.play());
-      navigator.mediaSession.setActionHandler('pause', () => audio.pause());
-      navigator.mediaSession.setActionHandler('previoustrack', playPrev);
-      navigator.mediaSession.setActionHandler('nexttrack', () => playNext(false));
-    } catch (e) { /* ignore */ }
-  }
-
-  /* ================= 初始化 ================= */
-  function init() {
-    // 恢复音量
-    let vol = 0.8;
-    try {
-      const saved = parseFloat(localStorage.getItem('leo-music-volume'));
-      if (isFinite(saved)) vol = Math.max(0, Math.min(1, saved));
-    } catch (e) { /* ignore */ }
-
-    audio.volume = vol;
-    volumeEl.value = Math.round(vol * 100);
-    setRangeFill(volumeEl, volumeEl.value);
-    setRangeFill(progressEl, 0);
-
-    playBtn.innerHTML = ICON.play;
-    updateModeButtons();
-
-    scanMusicFolder();
-  }
-
-  init();
 })();
 </script>
 </body>
 </html>
+
+
