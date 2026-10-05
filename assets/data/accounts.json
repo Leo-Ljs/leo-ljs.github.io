@@ -1,19 +1,41 @@
 {
   "version": 1,
   "type": "leoljs-accounts",
-  "exportedAt": "2026-10-04T08:54:42.424Z",
+  "exportedAt": "2026-10-05T02:48:25.459Z",
   "note": "可另存为 assets/data/accounts.json 作为站点默认账户表（哈希为加盐摘要，但仍建议不要公开真实密码）",
   "accounts": [
     {
-      "name": "admin",
+      "name": "Leo_Ljs",
       "perm": 4,
-      "salt": "653b10f5a72587aa",
-      "hash": "245fcf020724004ee27efc856aa2456bc4f45f619df4bfc556f157ccb9dac6ce",
+      "salt": "385cb7743459e530",
+      "hash": "5eb48e1fae7ff00987bdc029889611337cb2e4faaa0d4bff1dcba9c9bfa130f9",
       "hashAlg": "sha256",
-      "legacy": "afbb4d0c46089f8c",
+      "legacy": "50ec32784d665420",
       "note": "内置默认管理员",
       "isDefault": true,
       "createdAt": 1791104082424
+    },
+    {
+      "name": "TheWu",
+      "perm": 2,
+      "salt": "c46b65b801fb278b",
+      "hash": "1225db399be32ee542f755ef5c6b059019230f33ec1759f4ee44336d9c5bb4fd",
+      "hashAlg": "sha256",
+      "legacy": "6b8c634cea2826fa",
+      "note": "",
+      "isDefault": false,
+      "createdAt": 1791167647624
+    },
+    {
+      "name": "lzh985",
+      "perm": 2,
+      "salt": "54cd8d99330261c3",
+      "hash": "099b43c82ffc08bd8861e4a67fb60639e3484f3970ef1a23c5bb65f7d1c1c843",
+      "hashAlg": "sha256",
+      "legacy": "3b8fe6dc825b5d95",
+      "note": "",
+      "isDefault": false,
+      "createdAt": 1791167851629
     }
   ]
 }
