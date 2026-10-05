@@ -10,6 +10,11 @@
  *
  * 依赖：无（原生 JS）。用法：
  *   window.LEOAuth.ready.then(function(){ ... });
+ *
+ * 仓库账户表（可选）：把导出的账户表提交为 assets/data/accounts.json。
+ *   当它的 exportedAt 变化（即换了版本）且本地没有未同步改动时，会自动采用，
+ *   因此在仓库里新增账户后，回访的浏览器也能看到；本地有未同步改动时保留本地，
+ *   可用 LEOAuth.syncFromRepo() 手动重新加载仓库账户表（无需登录）。
  */
 (function (global) {
   'use strict';
@@ -17,6 +22,7 @@
   /* ======================== 常量 ======================== */
   var KEY_ACCOUNTS = 'leoljs.accounts.v1';
   var KEY_SESSION  = 'leoljs.session.v1';
+  var KEY_META     = 'leoljs.accounts.meta.v1';   // 仓库账户表同步状态（版本号 / 本地是否有未同步改动）
   var SESSION_DAYS = 7;
 
   var DEFAULT_ADMIN = { name: 'admin', password: 'admin', perm: 4 };
@@ -173,6 +179,24 @@
   function writeAccounts(list) {
     store.set(KEY_ACCOUNTS, JSON.stringify(list));
   }
+  /* ======================== 仓库账户表同步状态 ======================== */
+  function readMeta() {
+    var m = readJSON(store, KEY_META, null);
+    return (m && typeof m === 'object') ? m : null;
+  }
+  function writeMeta(patch) {
+    var m = readMeta() || {}, k;
+    patch = patch || {};
+    for (k in patch) { if (Object.prototype.hasOwnProperty.call(patch, k)) m[k] = patch[k]; }
+    m.updatedAt = Date.now();
+    store.set(KEY_META, JSON.stringify(m));
+    return m;
+  }
+  /* 本地账户表被改动（导出到仓库前）→ 标记未同步，避免被仓库表静默覆盖 */
+  function markLocalChanges() { writeMeta({ dirty: true }); }
+  function note(msg) {
+    try { if (global.console && global.console.info) global.console.info('[LEOAuth] ' + msg); } catch (e) { /* ignore */ }
+  }
   function pub(rec) {
     if (!rec) return null;
     return {
@@ -279,7 +303,44 @@
   }
 
   /* ======================== 初始化 / 默认账户 ======================== */
-  /* 可选：仓库里提交 assets/data/accounts.json 可让账户表在访问者间共享 */
+  /* 采用仓库账户表：写入本地并记录已同步版本 */
+  function adopt(file) {
+    writeAccounts(file.list);
+    writeMeta({ repoRev: file.rev, dirty: false });
+    emit('accounts');
+    note('已采用仓库账户表：' + file.list.length + ' 个账户（版本 ' + (file.rev || '无版本') + '）');
+  }
+  /* 本地账户表与仓库表是否一致（用于升级后判断能否记为“已同步”） */
+  function tablesEqual(a, b) {
+    if (!a || !b || a.length !== b.length) return false;
+    var set = {};
+    var key = function (r) { return nameKey(r.name) + '|' + r.perm + '|' + r.salt + '|' + r.hash + '|' + r.legacy; };
+    a.forEach(function (r) { set[key(r)] = true; });
+    for (var i = 0; i < b.length; i++) { if (set[key(b[i])] !== true) return false; }
+    return true;
+  }
+  /* 本地已有账户表时的启动逻辑：
+     1) 首次运行（还没有同步记录）：只建立基线，本地与仓库一致时记为已同步；
+     2) 仓库表换了版本且本地没有未同步改动 → 自动采用（提交新账户表后，回访浏览器也能看到新账户）；
+     3) 本地有未同步改动 → 保留本地，可用 LEOAuth.syncFromRepo() 手动重新加载。 */
+  function bootstrap(local) {
+    var meta = readMeta();
+    return loadAccountsFile().then(function (file) {
+      if (!meta) {
+        var same = !!(file && tablesEqual(local, file.list));
+        writeMeta({ repoRev: same ? file.rev : null, dirty: !same });
+        note(same ? '本地账户表与仓库账户表一致，已记录同步基线'
+                  : '本地账户表与仓库账户表不同，暂保留本地（标记为未同步）');
+        return 'existing';
+      }
+      if (!file) return 'existing';
+      if (meta.repoRev === file.rev) return 'existing';
+      if (meta.dirty) { note('本地账户表有未同步改动，暂不采用仓库账户表 ' + file.rev); return 'existing'; }
+      adopt(file);
+      return 'file-updated';
+    });
+  }
+
   function loadAccountsFile() {
     if (!/^https?:$/.test(location.protocol) || typeof global.fetch !== 'function') {
       return Promise.resolve(null);
@@ -291,17 +352,24 @@
         var arr = Array.isArray(data) ? data : (data.accounts || []);
         var out = [];
         arr.forEach(function (r) { var n = normalizeRecord(r); if (n) out.push(n); });
-        return (out.length && countAdmins(out) > 0) ? out : null;
+        return (out.length && countAdmins(out) > 0) ? { list: out, rev: accountsRev(data) } : null;
       })
       .catch(function () { return null; });
   }
 
+  /* 仓库账户表的版本号：优先 exportedAt，缺失时用内容摘要 */
+  function accountsRev(data) {
+    var rev = data && typeof data.exportedAt === 'string' ? data.exportedAt : '';
+    return rev || fnv(JSON.stringify(data), 0x811c9dc5);
+  }
+
   var ready = Promise.resolve().then(function () {
-    if (readAccounts().length) return 'existing';
-    return loadAccountsFile().then(function (list) {
-      if (list) { writeAccounts(list); return 'file'; }
+    var local = readAccounts();
+    if (local.length) return bootstrap(local);
+    return loadAccountsFile().then(function (file) {
+      if (file) { adopt(file); return 'file'; }
       return makeRecord(DEFAULT_ADMIN.name, DEFAULT_ADMIN.perm, DEFAULT_ADMIN.password, true, '内置默认管理员')
-        .then(function (rec) { writeAccounts([rec]); return 'default'; });
+        .then(function (rec) { writeAccounts([rec]); writeMeta({ repoRev: null, dirty: false }); return 'default'; });
     });
   });
 
@@ -329,6 +397,7 @@
       var list = readAccounts();
       list.push(rec);
       writeAccounts(list);
+      markLocalChanges();
       emit('accounts');
       return { ok: true, account: pub(rec) };
     });
@@ -361,6 +430,7 @@
     rec.updatedAt = Date.now();
     list[idx] = rec;
     writeAccounts(list);
+    markLocalChanges();
     emit('accounts');
     var s = readSession();
     if (s && s.id === id) setSession(rec, s.remember);
@@ -381,6 +451,7 @@
       return { ok: false, error: '至少需要保留 1 个权限 4 的超级管理员' };
     }
     writeAccounts(next);
+    markLocalChanges();
     emit('accounts');
     return { ok: true, account: pub(target) };
   }
@@ -401,6 +472,7 @@
       rec.updatedAt = Date.now();
       list[idx] = rec;
       writeAccounts(list);
+      markLocalChanges();
       emit('accounts');
       return { ok: true };
     });
@@ -472,6 +544,7 @@
     if (!out.length) return Promise.resolve({ ok: false, error: '账户数据无效' });
     if (countAdmins(out) < 1) return Promise.resolve({ ok: false, error: '账户表必须包含至少 1 个权限 4 的超级管理员' });
     writeAccounts(out);
+    markLocalChanges();
     emit('accounts');
     return Promise.resolve({ ok: true, count: out.length });
   }
@@ -483,17 +556,32 @@
     return makeRecord(DEFAULT_ADMIN.name, DEFAULT_ADMIN.perm, DEFAULT_ADMIN.password, true, '内置默认管理员')
       .then(function (rec) {
         writeAccounts([rec]);
+        markLocalChanges();
         emit('accounts');
         return { ok: true, account: pub(rec) };
       });
   }
   function storageInfo() {
+    var meta = readMeta() || {};
     return {
       count: readAccounts().length,
       hashAlg: canSubtle() ? 'sha256' : 'fnv1a',
       secure: canSubtle(),
-      protocol: location.protocol
+      protocol: location.protocol,
+      repoRev: meta.repoRev || null,
+      dirty: !!meta.dirty
     };
+  }
+  /* 手动从仓库重新加载账户表：不需要登录（仓库表本身是公开数据），
+     用于本地表过期、忘记账户名或本地改动想丢弃时的恢复入口。 */
+  function syncFromRepo() {
+    return loadAccountsFile().then(function (file) {
+      if (!file) {
+        return { ok: false, error: '无法读取仓库账户表（' + ACCOUNTS_FILE + '）：请确认站点是通过 http(s) 打开，且该文件已提交到仓库' };
+      }
+      adopt(file);
+      return { ok: true, count: file.list.length, rev: file.rev };
+    });
   }
 
   /* ======================== 权限查询 ======================== */
@@ -547,6 +635,7 @@
     importJSON: importJSON,
     resetToDefault: resetToDefault,
     storageInfo: storageInfo,
+    syncFromRepo: syncFromRepo,
 
     /* 校验与事件 */
     validateName: validateName,

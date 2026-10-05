@@ -27,7 +27,7 @@ JSON 提交回仓库，作为所有访客共享的只读基线。
    ├─ js/leo-ui.js                导航挂载、Toast、权限锁定提示、通用面板（登录 / 账户 / 编辑）
    └─ data/
       ├─ site.json                站点默认内容（提交到仓库，对所有访客生效）
-      └─ accounts.json            可选：默认账户表（首次访问且本地无账户数据时读取）
+      └─ accounts.json            可选：共享账户表（首次访问读取；换版本时自动采用，见下文）
 ```
 
 ## 本地预览
@@ -56,19 +56,20 @@ python -m http.server 8000
 | 3 | 内容审核员 | 只读查看账户列表、导出目录快照 |
 | 4 | 超级管理员 | 管理主页内容、游戏目录与账户 |
 
-- 默认账户：**admin / admin**（权限 4，首次打开自动创建）。请登录后立即在「我的账户」里修改密码。
+- 内置默认账户：**admin / admin**（权限 4）。只有在「本地与仓库都没有账户表」时才会自动创建；
+  仓库里提交了 `assets/data/accounts.json` 时以它为准（当前仓库的超级管理员见该文件中的 `perm: 4` 记录）。
 - 能力表（`LEOAuth.CAPS`）：`viewHome`(0)、`viewGames`(1)、`useMusic`(1)、`personal`(2)、
   `exportCatalog`(3)、`viewAccounts`(3)、`editSite`(4)、`editCatalog`(4)、`manageAccounts`(4)。
 - 密码摘要：优先 `sha256("leoljs$" + salt + "$" + 明文)`；在没有 `crypto.subtle` 的环境
   （例如直接 `file://` 打开）自动退化为内置的加盐 FNV-1a 摘要。记录中同时保留两种摘要，
   因此同一份账户表在不同环境下都能登录。
 - 登录会话保存在 `localStorage`，有效期 7 天。
-- 本地存储键：`leoljs.accounts.v1`（账户表）、`leoljs.site.v1`（站点内容）、
-  `leoljs.catalog.v1`（游戏目录）、`leoljs.session.v1`（登录会话）。
+- 本地存储键：`leoljs.accounts.v1`（账户表）、`leoljs.accounts.meta.v1`（仓库账户表同步状态）、
+  `leoljs.site.v1`（站点内容）、`leoljs.catalog.v1`（游戏目录）、`leoljs.session.v1`（登录会话）。
 
 ## 管理中心（admin/）
 
-打开 `/admin/`，用 `admin / admin` 登录即可看到六个标签页：
+打开 `/admin/`，用权限 4 的账户登录（仓库账户表里的超级管理员，或内置的 `admin / admin`）即可看到六个标签页：
 
 | 标签页 | 内容 | 最低权限 |
 |---|---|---|
@@ -90,11 +91,20 @@ python -m http.server 8000
 |---|---|---|
 | 站点内容 | `leoljs.site.v1`，超级管理员在页面编辑后点「保存」 | `assets/data/site.json` |
 | 游戏目录 | `leoljs.catalog.v1`，编辑 / 扫描后点「保存」 | `game/games.json` |
-| 账户 | `leoljs.accounts.v1`，所有账户操作都会写入本地 | `assets/data/accounts.json`（可选，仅首次访问且本地无数据时读取） |
+| 账户 | `leoljs.accounts.v1`，所有账户操作都会写入本地 | `assets/data/accounts.json`（可选；首次访问读取，换版本时自动采用） |
 
 因为站点没有后端，**页面上的改动只对当前这台浏览器生效**。要让所有访客看到新内容，请在管理
 中心点「导出」，把 JSON 提交到仓库覆盖对应文件；其他访客在本地没有覆盖数据时会读到仓库版本。
 「概览 → 重新读取仓库 JSON」会丢弃本地覆盖并重新拉取文件。
+
+账户表的同步规则（与站点内容 / 游戏目录略有不同）：
+
+1. 本地没有账户表时：采用仓库账户表；仓库文件不存在或无效时创建内置的 `admin / admin`。
+2. 本地已有账户表时：只在仓库账户表的 `exportedAt` 变化（即换版本）且本地没有未同步改动时才采用，
+   因此在仓库里新增账户后，回访的浏览器也能看到新账户，不需要手动清缓存。
+3. 本地改过账户（新增 / 改名 / 改权限 / 改密 / 删除 / 导入）会标记为「未同步」，此时仓库表
+   不会静默覆盖本地；想放弃本地改动，点登录框里的「从仓库重新加载账户表」
+   （即 `LEOAuth.syncFromRepo()`），同步状态可用 `LEOAuth.storageInfo()` 查看（`repoRev` / `dirty`）。
 
 ## 添加一个新游戏
 
@@ -127,8 +137,11 @@ python -m http.server 8000
 
 ## 维护提示
 
-- 重置本机数据：浏览器控制台执行 `localStorage.clear()`（或删除上述四个键）后刷新页面。
-- 忘记密码：只能清掉 `leoljs.accounts.v1` 重新加载默认账户表（仓库版 `accounts.json` 或内置默认账户）。
+- 重置本机数据：浏览器控制台执行 `localStorage.clear()`（或删除上述五个键）后刷新页面。
+- 看不到新账户：点登录框里的「从仓库重新加载账户表」（`LEOAuth.syncFromRepo()`）采用仓库账户表。
+- 忘记密码：先用其他权限 4 账户在「账户管理」里重置；所有权限 4 账户都进不去时，清掉
+  `leoljs.accounts.v1` 并刷新会回落到仓库账户表；若仓库表里也没有可用的超级管理员，
+  需要重新生成一份 `accounts.json`（至少含 1 个权限 4 账户）提交到仓库。
 - 整站都是静态文件，直接把仓库根目录作为 GitHub Pages 的发布目录即可，无需构建步骤。
 
 

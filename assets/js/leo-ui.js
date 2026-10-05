@@ -265,18 +265,34 @@
       '<div class="leo-msg"></div>' +
       '<form data-form="login">' +
         '<div class="leo-field"><label>账户名称</label>' +
-          '<input class="leo-input" name="name" autocomplete="username" placeholder="例如 admin"></div>' +
+          '<input class="leo-input" name="name" autocomplete="username" placeholder="站点账户表中的账户名"></div>' +
         '<div class="leo-field"><label>密码</label>' +
           '<input class="leo-input" type="password" name="pw" autocomplete="current-password" placeholder="至少 4 位"></div>' +
         '<label class="leo-check"><input type="checkbox" name="remember"> 记住我（7 天内免登录）</label>' +
         '<div class="ops" style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap">' +
           '<button class="leo-btn primary" type="submit">登录</button>' +
           '<button class="leo-btn" type="button" data-login="perms">权限说明</button>' +
+          '<button class="leo-btn ghost" type="button" data-login="sync">从仓库重新加载账户表</button>' +
         '</div>' +
       '</form>' +
       '<p class="leo-muted" style="font-size:11.5px;line-height:1.8;margin:14px 0 0">' +
-      '默认管理员：<b>admin / admin</b>（权限 4）。本站为纯静态页面，账户数据保存在当前浏览器（localStorage），不会上传到任何服务器。</p>';
+      '账户名与密码来自站点账户表 <code>assets/data/accounts.json</code>（首次访问或该文件换版本时自动读取），' +
+      '看不到最新账户时可点「从仓库重新加载账户表」。纯静态站点：账户数据保存在当前浏览器（localStorage），不会上传到任何服务器。</p>';
     node.querySelector('[data-login="perms"]').addEventListener('click', function () { openPermsModal(); });
+    var syncBtn = node.querySelector('[data-login="sync"]');
+    if (syncBtn) syncBtn.addEventListener('click', function () {
+      if (!A.syncFromRepo) { msgIn(node, '当前 leo-auth.js 版本不支持从仓库重新加载，请刷新页面后重试', 'err'); return; }
+      var btn = this;
+      btn.disabled = true;
+      A.syncFromRepo().then(function (res) {
+        btn.disabled = false;
+        if (!res.ok) { msgIn(node, res.error, 'err'); return; }
+        msgIn(node, '已从仓库重新加载 ' + res.count + ' 个账户，请用其中的账户名与密码登录。', 'ok');
+      })['catch'](function (e) {
+        btn.disabled = false;
+        msgIn(node, '重新加载失败：' + e, 'err');
+      });
+    });
     var form = node.querySelector('[data-form="login"]');
     form.addEventListener('submit', function (ev) {
       ev.preventDefault();
