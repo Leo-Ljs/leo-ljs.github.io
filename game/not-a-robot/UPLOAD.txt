@@ -1,0 +1,5 @@
+Upload the CONTENTS of this folder to the repository root.
+Host = any repo, e.g. "not-a-robot-mirror"  =>  https://<your-user>.github.io/not-a-robot-mirror/not-a-robot/
+The build works under any repo name because the router base is detected at runtime.
+Then Settings -> Pages -> Build from branch: main / root.
+.nojekyll is already included (required, otherwise _nuxt/ is dropped).
