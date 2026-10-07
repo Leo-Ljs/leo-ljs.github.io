@@ -1,11 +1,11 @@
 /*!
- * Leo 站点 · 游戏目录（自动收录 + 权限 4 可视化编辑）
+ * Leo 站点 · 游戏目录（自动收录 + 可视化编辑）
  * ---------------------------------------------------------------------------
  * 收录规则：/game/ 下的每个子文件夹视为一个游戏，入口为 <文件夹>/index.html。
  *   - 若服务器开放目录索引（本地开发服务器常见），可自动枚举全部子文件夹；
  *   - GitHub Pages 等静态托管不提供目录索引，则退化为：读取 game/games.json
  *     清单 + 校验/抓取每个条目的标题、描述、封面。
- * 数据优先级：本地保存(localStorage，权限 4 编辑) > game/games.json > 内置默认
+ * 数据优先级：本地保存(localStorage，编辑器对所有人公开) > game/games.json > 内置默认
  * 提供：LEOCatalog.load()/get()/save()/scan()/probeFolder()/mountEditor() ...
  */
 (function (global) {
@@ -14,7 +14,16 @@
   var KEY = 'leoljs.catalog.v1';
   var GAMES_FILE = 'game/games.json';
   var DIR = 'game/';
-  var ROOT = (global.LEOAuth && global.LEOAuth.root) || './';
+  /* 站点根路径：本脚本位于 <根>/assets/js/ 下 */
+  var SCRIPT_URL = (document.currentScript && document.currentScript.src) || (function () {
+    var list = document.getElementsByTagName('script');
+    for (var i = list.length - 1; i >= 0; i--) {
+      if (/assets\/js\/leo-catalog\.js(\?|#|$)/.test(list[i].src || '')) return list[i].src;
+    }
+    return location.href;
+  })();
+  var ROOT;
+  try { ROOT = new URL('../../', SCRIPT_URL).href; } catch (e) { ROOT = './'; }
 
   var COVER_NAMES = ['cover.png', 'cover.jpg', 'cover.jpeg', 'cover.webp', 'cover.gif',
     'thumbnail.png', 'thumb.png', 'preview.png', 'screenshot.png', 'icon.png'];
@@ -456,7 +465,7 @@
   function tplCat(c) {
     var items = c.games.map(function (g, i) { return tplItem(g, i, c.games.length); }).join('');
     return '<div class="leo-editor-bar">' +
-      '<span class="title">游戏目录编辑 · 需要权限 4</span>' +
+      '<span class="title">游戏目录编辑</span>' +
       '<button class="leo-btn sm" data-act="scan">扫描 game/ 目录</button>' +
       '<button class="leo-btn sm" data-act="scan-refresh">扫描并覆盖信息</button>' +
       '<button class="leo-btn sm" data-act="add">新增条目</button>' +

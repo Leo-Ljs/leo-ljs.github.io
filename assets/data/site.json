@@ -4,17 +4,17 @@
   "hero": {
     "tagline": "小游戏 · 音乐 · 持续扩充中",
     "title": "欢迎来到我的网页小站",
-    "subtitle": "这里收录了自己整理的网页小游戏与音乐播放器。游戏中心会自动收录 game 目录下的所有子文件夹，音乐播放器会扫描 music 目录中的音频文件；站点内容可由超级管理员在页面上直接可视化编辑。",
+    "subtitle": "这里收录了自己整理的网页小游戏与音乐播放器。游戏中心会自动收录 game 目录下的所有子文件夹，音乐播放器会扫描 music 目录中的音频文件；所有页面都可以直接打开，站点内容也能在页面上可视化编辑。",
     "primaryText": "进入游戏中心",
     "primaryHref": "game/",
     "secondaryText": "打开音乐播放器",
     "secondaryHref": "music/"
   },
   "nav": [
-    { "label": "主页", "href": "./", "cap": "viewHome" },
-    { "label": "游戏中心", "href": "game/", "cap": "viewGames" },
-    { "label": "音乐", "href": "music/", "cap": "useMusic" },
-    { "label": "管理中心", "href": "admin/", "cap": "viewAccounts" }
+    { "label": "主页", "href": "./" },
+    { "label": "游戏中心", "href": "game/" },
+    { "label": "音乐播放器", "href": "music/" },
+    { "label": "管理中心", "href": "admin/" }
   ],
   "announcement": {
     "enabled": true,
@@ -23,19 +23,19 @@
   },
   "blocks": [
     {
-      "id": "games", "kind": "games", "cap": "viewGames", "enabled": true, "icon": "🎮",
+      "id": "games", "kind": "games", "enabled": true, "icon": "🎮",
       "title": "游戏中心", "href": "game/",
-      "desc": "收录 game 目录下的全部网页小游戏，支持搜索、标签筛选、收藏与（管理员）可视化编辑。"
+      "desc": "收录 game 目录下的全部网页小游戏，支持搜索、标签筛选、收藏与可视化编辑。"
     },
     {
-      "id": "music", "kind": "music", "cap": "useMusic", "enabled": true, "icon": "🎵",
+      "id": "music", "kind": "music", "enabled": true, "icon": "🎵",
       "title": "音乐播放器", "href": "music/",
       "desc": "内置唱片机风格的播放器，自动扫描 music 目录中的音频文件，支持随机、循环与音量记忆。"
     },
     {
-      "id": "admin", "kind": "link", "cap": "viewAccounts", "enabled": true, "icon": "🛠️",
+      "id": "admin", "kind": "link", "enabled": true, "icon": "🛠️",
       "title": "管理中心", "href": "admin/",
-      "desc": "查看站点状态、账户列表与游戏目录；超级管理员可在此管理账户与站点内容。"
+      "desc": "查看站点状态与游戏目录；站点的内容与目录都可以在这里可视化编辑。"
     }
   ],
   "sections": [
@@ -45,7 +45,7 @@
     }
   ],
   "footer": {
-    "text": "Leo 的网页小站 · 纯静态站点，账户与内容配置保存在浏览器本地",
+    "text": "Leo 的网页小站 · 纯静态站点，内容配置保存在浏览器本地",
     "links": [
       { "label": "游戏中心", "href": "game/" },
       { "label": "音乐播放器", "href": "music/" },

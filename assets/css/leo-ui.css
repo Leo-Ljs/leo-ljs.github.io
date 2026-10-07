@@ -1,389 +1,353 @@
 /*!
- * Leo 站点 · 通用样式（导航 / 卡片 / 弹窗 / 表单 / 表格 / 权限徽章）
- * 与 music/index.html 保持同一套视觉语言：暗色 + 玻璃拟态 + 紫青渐变
+ * Leo 站点 · 通用样式（导航 / 卡片 / 弹窗 / 表单 / 表格）
+ * ---------------------------------------------------------------------------
+ * 设计取向：纸质底 + 墨色字 + 单一砖红强调色；小圆角、1px 描边、无渐变、
+ * 无毛玻璃、无发光投影。小标签 / 路径 / 数量用等宽字体，标题用衬线字体。
  * 可被任意子页面引用：<link rel="stylesheet" href="<根路径>/assets/css/leo-ui.css">
  */
 :root{
-  --accent:#7c5cff;
-  --accent2:#22d3ee;
-  --text:#eceaf6;
-  --muted:#8e8ca6;
-  --card:rgba(255,255,255,.055);
-  --card-solid:#12121c;
-  --border:rgba(255,255,255,.09);
-  --bg:#07070d;
-  --ok:#34d399;
-  --warn:#fbbf24;
-  --danger:#f87171;
-  --radius:20px;
-  --nav-h:60px;
-  --shadow:0 24px 60px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.06);
+  --paper:#f6f4ef;         /* 页面底色 */
+  --panel:#fffdf9;         /* 卡片底色 */
+  --panel-2:#f1eee6;       /* 次级底色 */
+  --ink:#23211d;           /* 正文 */
+  --muted:#6f6a5f;         /* 次要文字 */
+  --line:#d9d4c6;          /* 描边 */
+  --line-strong:#bdb6a3;   /* 明显描边 */
+  --accent:#9d3d2a;        /* 强调色：链接 / 主按钮 */
+  --accent-dark:#7d2c1c;
+  --ok:#3d6b45;
+  --warn:#8d6412;
+  --danger:#a5301f;
+  --radius:4px;
+  --nav-h:56px;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --serif:Georgia,"Times New Roman","Songti SC","SimSun",serif;
+  --mono:Consolas,"SFMono-Regular",Menlo,"DejaVu Sans Mono",monospace;
 }
 
 *,*::before,*::after{ box-sizing:border-box; }
+html{ color-scheme:light; }
 
 body.leo-page{
   margin:0;
   min-height:100%;
-  color:var(--text);
-  background:var(--bg);
-  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  color:var(--ink);
+  background:var(--paper);
+  font-family:var(--sans);
+  font-size:15px;
+  line-height:1.75;
   -webkit-font-smoothing:antialiased;
-  overflow-x:hidden;
-  position:relative;
 }
-body.leo-page::before{
-  content:"";
-  position:fixed;
-  inset:-20%;
-  z-index:-1;
-  pointer-events:none;
-  background:
-    radial-gradient(620px circle at 15% 12%, rgba(124,92,255,.34), transparent 62%),
-    radial-gradient(720px circle at 86% 78%, rgba(34,211,238,.20), transparent 62%),
-    radial-gradient(520px circle at 62% 6%, rgba(236,72,153,.14), transparent 60%);
-  animation:leoDrift 22s ease-in-out infinite alternate;
-}
-@keyframes leoDrift{ to{ transform:translate3d(-3%,-2%,0) scale(1.08); } }
 
 /* 由 leo-ui.js 自动加到 body 上，避免固定导航遮挡内容 */
 body.leo-has-nav{ padding-top:var(--nav-h); }
 
-a{ color:var(--accent2); }
-::selection{ background:rgba(124,92,255,.4); color:#fff; }
+a{ color:var(--accent); text-decoration:none; border-bottom:1px solid rgba(157,61,42,.35); }
+a:hover{ color:var(--accent-dark); border-bottom-color:var(--accent-dark); }
+::selection{ background:#e6d5cc; color:var(--ink); }
+code{ font-family:var(--mono); font-size:.92em; background:var(--panel-2); border:1px solid var(--line); border-radius:2px; padding:1px 4px; }
+b,strong{ font-weight:650; }
 
 /* ================= 顶部导航 ================= */
 .leo-nav{
   position:fixed; top:0; left:0; right:0; height:var(--nav-h); z-index:900;
-  display:flex; align-items:center; gap:12px; padding:0 16px;
-  background:rgba(10,10,18,.74);
-  backdrop-filter:blur(16px) saturate(150%);
-  -webkit-backdrop-filter:blur(16px) saturate(150%);
-  border-bottom:1px solid var(--border);
+  display:flex; align-items:center; gap:16px; padding:0 18px;
+  background:var(--paper);
+  border-bottom:1px solid var(--line-strong);
 }
 .leo-nav .brand{
-  display:flex; align-items:center; gap:10px;
-  color:#fff; text-decoration:none; font-weight:700; font-size:14.5px;
-  white-space:nowrap;
+  display:flex; align-items:center; gap:9px;
+  color:var(--ink); text-decoration:none; border:0;
+  font-weight:650; font-size:14px; white-space:nowrap;
 }
+.leo-nav .brand:hover{ color:var(--accent); border-bottom:0; }
 .leo-nav .logo{
-  width:30px; height:30px; flex:none; border-radius:9px;
-  display:grid; place-items:center; color:#fff; font-size:15px; font-weight:800;
-  background:linear-gradient(135deg,var(--accent),var(--accent2));
-  box-shadow:0 6px 18px rgba(124,92,255,.45);
+  width:26px; height:26px; flex:none; border-radius:3px;
+  display:grid; place-items:center; color:var(--panel);
+  font-family:var(--mono); font-size:13px; font-weight:700;
+  background:var(--ink);
 }
-.leo-nav .links{ display:flex; align-items:center; gap:2px; flex:1; min-width:0; overflow-x:auto; scrollbar-width:none; }
+.leo-nav .links{ display:flex; align-items:center; gap:18px; flex:1; min-width:0; overflow-x:auto; scrollbar-width:none; }
 .leo-nav .links::-webkit-scrollbar{ display:none; }
 .leo-nav .links a{
-  color:var(--muted); text-decoration:none; font-size:13.5px;
-  padding:8px 12px; border-radius:10px; white-space:nowrap; transition:.18s;
+  color:var(--muted); text-decoration:none; border:0; border-bottom:2px solid transparent;
+  font-size:14px; padding:4px 0; white-space:nowrap;
 }
-.leo-nav .links a:hover{ color:#fff; background:rgba(255,255,255,.07); }
-.leo-nav .links a.active{ color:#fff; background:rgba(124,92,255,.24); }
+.leo-nav .links a:hover{ color:var(--ink); border-bottom-color:var(--line-strong); }
+.leo-nav .links a.active{ color:var(--ink); border-bottom-color:var(--accent); }
 .leo-nav .right{ display:flex; align-items:center; gap:8px; flex:none; }
 .leo-nav-toggle{
-  display:none; border:1px solid var(--border); background:rgba(255,255,255,.05);
-  color:var(--text); border-radius:10px; width:38px; height:34px; cursor:pointer; font-size:16px;
+  display:none; border:1px solid var(--line-strong); background:var(--panel);
+  color:var(--ink); border-radius:var(--radius); width:36px; height:30px; cursor:pointer; font-size:15px;
 }
 @media (max-width:760px){
   .leo-nav-toggle{ display:block; }
   .leo-nav .links{
-    position:absolute; top:var(--nav-h); left:10px; right:10px;
-    flex-direction:column; align-items:stretch; gap:2px; padding:8px;
-    background:rgba(12,12,20,.96); border:1px solid var(--border); border-radius:16px;
-    box-shadow:0 22px 50px rgba(0,0,0,.55);
-    display:none; max-height:60vh; overflow:auto;
+    position:absolute; top:var(--nav-h); left:0; right:0;
+    flex-direction:column; align-items:stretch; gap:0; padding:6px 0;
+    background:var(--panel); border-bottom:1px solid var(--line-strong);
+    display:none;
   }
   .leo-nav.open .links{ display:flex; }
-  .leo-nav .links a{ padding:11px 12px; }
+  .leo-nav .links a{ padding:9px 18px; border-bottom:0; }
   .leo-nav .brand .brand-name{ display:none; }
 }
-
 /* ================= 按钮 ================= */
 .leo-btn{
-  display:inline-flex; align-items:center; justify-content:center; gap:7px;
-  padding:9px 15px; border-radius:11px; border:1px solid var(--border);
-  background:rgba(255,255,255,.05); color:var(--text);
-  font:inherit; font-size:13px; font-weight:600; line-height:1;
-  cursor:pointer; text-decoration:none; white-space:nowrap; transition:.18s;
+  display:inline-flex; align-items:center; gap:6px;
+  padding:7px 13px; border-radius:var(--radius); cursor:pointer;
+  font:inherit; font-size:13px; font-weight:600; line-height:1.4;
+  color:var(--ink); background:var(--panel);
+  border:1px solid var(--line-strong);
+  text-decoration:none;
 }
-.leo-btn:hover{ background:rgba(255,255,255,.1); border-color:rgba(255,255,255,.2); }
+.leo-btn:hover{ background:var(--panel-2); border-color:var(--ink); color:var(--ink); }
 .leo-btn:active{ transform:translateY(1px); }
 .leo-btn[disabled]{ opacity:.45; cursor:not-allowed; }
-.leo-btn.primary{
-  border-color:transparent; color:#fff;
-  background:linear-gradient(135deg,var(--accent),var(--accent2));
-  box-shadow:0 10px 24px rgba(124,92,255,.36);
-}
-.leo-btn.primary:hover{ filter:brightness(1.08); }
-.leo-btn.danger{ color:#fff; border-color:transparent; background:linear-gradient(135deg,#ef4444,#f97316); }
-.leo-btn.ghost{ background:transparent; }
-.leo-btn.sm{ padding:6px 10px; font-size:12px; border-radius:9px; }
-.leo-btn.block{ width:100%; }
+.leo-btn.primary{ color:var(--panel); background:var(--accent); border-color:var(--accent-dark); }
+.leo-btn.primary:hover{ background:var(--accent-dark); color:var(--panel); }
+.leo-btn.danger{ color:var(--danger); border-color:rgba(165,48,31,.5); background:var(--panel); }
+.leo-btn.danger:hover{ background:#f6e7e3; border-color:var(--danger); color:var(--danger); }
+.leo-btn.ghost{ background:transparent; border-color:var(--line); color:var(--muted); }
+.leo-btn.ghost:hover{ color:var(--ink); border-color:var(--ink); }
+.leo-btn.sm{ padding:5px 9px; font-size:12px; }
+.leo-btn.block{ width:100%; justify-content:center; }
 
+/* ================= 小标签 / 徽章 ================= */
 .leo-chip{
-  display:inline-flex; align-items:center; gap:6px;
-  padding:5px 11px; border-radius:999px; font-size:12px; cursor:pointer;
-  border:1px solid var(--border); background:rgba(255,255,255,.04); color:var(--muted);
-  transition:.18s;
+  padding:3px 9px; border-radius:2px; font-size:12px; cursor:pointer;
+  font-family:var(--mono); color:var(--muted);
+  border:1px solid var(--line-strong); background:var(--panel);
 }
-.leo-chip:hover{ color:#fff; }
-.leo-chip.active{
-  color:#fff; border-color:rgba(124,92,255,.5);
-  background:rgba(124,92,255,.22);
+.leo-chip:hover{ color:var(--ink); border-color:var(--ink); }
+.leo-chip.active{ color:var(--panel); background:var(--ink); border-color:var(--ink); }
+.leo-badge{
+  display:inline-block; padding:1px 6px; border-radius:2px;
+  font-family:var(--mono); font-size:11px; letter-spacing:.02em;
+  color:var(--muted); background:var(--panel-2); border:1px solid var(--line-strong);
 }
 
-/* ================= 权限徽章 ================= */
-.leo-perm{
-  display:inline-flex; align-items:center; gap:5px;
-  padding:3px 9px; border-radius:999px; font-size:11.5px; font-weight:700;
-  border:1px solid transparent; white-space:nowrap;
-}
-.leo-perm i{ font-style:normal; opacity:.85; font-weight:600; }
-.leo-perm.p0{ color:#c3c1d4; background:rgba(255,255,255,.09); border-color:rgba(255,255,255,.14); }
-.leo-perm.p1{ color:#7dd3fc; background:rgba(34,211,238,.16); border-color:rgba(34,211,238,.34); }
-.leo-perm.p2{ color:#6ee7b7; background:rgba(52,211,153,.16); border-color:rgba(52,211,153,.34); }
-.leo-perm.p3{ color:#fcd34d; background:rgba(251,191,36,.16); border-color:rgba(251,191,36,.34); }
-.leo-perm.p4{
-  color:#fff; border-color:transparent;
-  background:linear-gradient(135deg,#f472b6,#f59e0b);
-  box-shadow:0 6px 16px rgba(244,114,182,.35);
-}
-/* ================= 基础布局 ================= */
-.leo-wrap{ width:min(1120px,100%); margin:0 auto; padding:26px 18px 64px; }
+/* ================= 页面骨架 ================= */
+.leo-wrap{ width:min(1120px,100%); margin:0 auto; padding:28px 20px 72px; }
 .leo-narrow{ width:min(880px,100%); }
-.leo-card{
-  background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
-  backdrop-filter:blur(18px) saturate(150%);
-  -webkit-backdrop-filter:blur(18px) saturate(150%);
-  box-shadow:var(--shadow);
-}
+.leo-card{ background:var(--panel); border:1px solid var(--line-strong); border-radius:var(--radius); }
 .leo-card.pad{ padding:20px 22px; }
 
+/* ================= 首屏 ================= */
 .leo-hero{
-  padding:38px 30px; border-radius:26px; position:relative; overflow:hidden;
-  background:
-    radial-gradient(520px circle at 12% 20%, rgba(124,92,255,.28), transparent 60%),
-    radial-gradient(560px circle at 88% 82%, rgba(34,211,238,.18), transparent 60%),
-    var(--card);
-  border:1px solid var(--border);
+  padding:26px 0 24px; border-bottom:2px solid var(--ink);
 }
-.leo-hero h1{ margin:0 0 10px; font-size:clamp(24px,4.4vw,38px); letter-spacing:.4px; }
-.leo-hero p{ margin:0; color:var(--muted); font-size:14.5px; line-height:1.9; max-width:660px; }
-.leo-hero .actions{ display:flex; flex-wrap:wrap; gap:10px; margin-top:22px; }
+.leo-hero h1{
+  margin:0 0 12px; font-family:var(--serif); font-weight:600;
+  font-size:clamp(23px,3.6vw,34px); line-height:1.35; letter-spacing:0;
+}
+.leo-hero p{ margin:0; color:var(--muted); font-size:14.5px; line-height:1.95; max-width:680px; }
+.leo-hero .actions{ display:flex; flex-wrap:wrap; gap:10px; margin-top:20px; }
 .leo-hero .tagline{
-  display:inline-flex; align-items:center; gap:7px; margin-bottom:14px;
-  padding:5px 12px; border-radius:999px; font-size:12px; color:#c9bcff;
-  background:rgba(124,92,255,.18); border:1px solid rgba(124,92,255,.34);
+  display:inline-block; margin-bottom:12px;
+  font-family:var(--mono); font-size:12px; color:var(--muted);
+  border-bottom:1px dotted var(--line-strong);
 }
 
-.leo-section{ margin-top:30px; }
+/* ================= 区块 ================= */
+.leo-section{ margin-top:34px; }
 .leo-section > header{
-  display:flex; align-items:center; justify-content:space-between; gap:12px;
-  flex-wrap:wrap; margin-bottom:14px;
+  display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;
+  padding-bottom:7px; margin-bottom:16px; border-bottom:1px solid var(--line-strong);
 }
 .leo-section h2{
-  margin:0; font-size:17px; font-weight:700; display:flex; align-items:center; gap:9px;
+  margin:0; font-family:var(--serif); font-weight:600; font-size:19px; letter-spacing:0;
 }
 .leo-section h2 .count{
-  font-size:11.5px; font-weight:600; padding:2px 9px; border-radius:999px;
-  color:#c9bcff; background:rgba(124,92,255,.22);
+  margin-left:6px; font-family:var(--mono); font-size:12px; font-weight:400; color:var(--muted);
 }
-.leo-section .hint{ font-size:12px; color:var(--muted); }
+.leo-section .hint{ font-family:var(--mono); font-size:11.5px; color:var(--muted); }
+.leo-section > header > .leo-btn{ margin-left:auto; }
 
-/* ================= 卡片网格 ================= */
+/* ================= 板块卡片 ================= */
 .leo-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(238px,1fr)); gap:14px; }
 .leo-tile{
-  display:flex; flex-direction:column; gap:10px; padding:16px;
-  border-radius:18px; border:1px solid var(--border); background:var(--card);
-  text-decoration:none; color:inherit; position:relative;
-  transition:transform .18s ease, border-color .18s, box-shadow .18s;
+  display:flex; flex-direction:column; gap:9px; padding:16px 18px;
+  background:var(--panel); border:1px solid var(--line-strong); border-radius:var(--radius);
+  color:var(--ink); text-decoration:none; border-bottom:1px solid var(--line-strong);
 }
-.leo-tile:hover{ transform:translateY(-3px); border-color:rgba(124,92,255,.45); box-shadow:0 18px 40px rgba(0,0,0,.45); }
+.leo-tile:hover{ border-color:var(--ink); background:var(--panel-2); color:var(--ink); }
 .leo-tile .ico{
-  width:42px; height:42px; border-radius:12px; display:grid; place-items:center;
-  font-size:20px; background:rgba(124,92,255,.18); border:1px solid rgba(124,92,255,.3);
+  font-size:15px; width:30px; height:30px; flex:none;
+  display:grid; place-items:center; border:1px solid var(--line-strong); border-radius:2px;
+  background:var(--panel-2);
 }
-.leo-tile .ttl{ font-size:15px; font-weight:700; display:flex; align-items:center; gap:8px; }
-.leo-tile .desc{ font-size:12.5px; color:var(--muted); line-height:1.75; flex:1; }
-.leo-tile .foot{ display:flex; align-items:center; gap:8px; font-size:12px; color:var(--muted); }
-.leo-tile.dim{ opacity:.62; }
-.leo-tile.locked{ cursor:not-allowed; }
-.leo-tile .lock{
-  position:absolute; top:12px; right:12px; font-size:13px; opacity:.85;
-}
-
-/* ================= 游戏卡 ================= */
+.leo-tile .ttl{ font-size:15px; font-weight:650; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.leo-tile .ttl .leo-muted{ font-family:var(--mono); font-size:11.5px; font-weight:400; }
+.leo-tile .desc{ font-size:13px; color:var(--muted); line-height:1.8; flex:1; }
+.leo-tile .foot{ font-family:var(--mono); font-size:11.5px; color:var(--muted); }
+.leo-tile.dim{ opacity:.75; }
+.leo-tile .lock{ display:none; }
+/* ================= 游戏卡片 ================= */
 .leo-game{
-  display:flex; flex-direction:column; overflow:hidden; padding:0;
-  border-radius:18px; border:1px solid var(--border); background:var(--card);
-  position:relative; transition:transform .18s ease, border-color .18s, box-shadow .18s;
+  display:flex; flex-direction:column; overflow:hidden;
+  background:var(--panel); border:1px solid var(--line-strong); border-radius:var(--radius);
 }
-.leo-game:hover{ transform:translateY(-3px); border-color:rgba(124,92,255,.45); box-shadow:0 18px 42px rgba(0,0,0,.5); }
+.leo-game:hover{ border-color:var(--ink); }
 .leo-game .cover{
-  position:relative; aspect-ratio:16/9; display:grid; place-items:center;
-  font-size:34px; font-weight:800; color:#fff; letter-spacing:2px;
-  background:linear-gradient(135deg,#4c1d95,#0e7490);
-  overflow:hidden;
+  position:relative; display:grid; place-items:center; aspect-ratio:16/9;
+  background:var(--panel-2); border-bottom:1px solid var(--line); overflow:hidden;
 }
 .leo-game .cover img{ width:100%; height:100%; object-fit:cover; display:block; }
-.leo-game .cover .fallback{ opacity:.9; text-shadow:0 4px 20px rgba(0,0,0,.5); }
+.leo-game .cover .fallback{
+  font-family:var(--serif); font-size:34px; color:var(--line-strong);
+}
 .leo-game .cover .flag{
-  position:absolute; top:9px; left:9px; font-size:11px; font-weight:700;
-  padding:3px 8px; border-radius:999px; background:rgba(0,0,0,.5);
-  color:#fcd34d; border:1px solid rgba(251,191,36,.45);
+  position:absolute; top:8px; left:8px; padding:1px 7px;
+  font-family:var(--mono); font-size:11px;
+  color:var(--panel); background:var(--accent); border-radius:2px;
 }
-.leo-game .body{ padding:13px 14px 14px; display:flex; flex-direction:column; gap:9px; flex:1; }
-.leo-game .ttl{ font-size:14.5px; font-weight:700; display:flex; align-items:center; gap:7px; }
-.leo-game .desc{
-  font-size:12.5px; color:var(--muted); line-height:1.7; flex:1;
-  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+.leo-game .body{ padding:14px 16px 16px; display:flex; flex-direction:column; gap:8px; flex:1; }
+.leo-game .ttl{ font-size:15px; font-weight:650; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.leo-game .desc{ font-size:13px; color:var(--muted); line-height:1.8; flex:1; }
+.leo-game .tags{ display:flex; flex-wrap:wrap; gap:5px; }
+.leo-game .tags .tag{
+  font-family:var(--mono); font-size:11px; color:var(--muted);
+  border:1px solid var(--line-strong); border-radius:2px; padding:0 5px;
 }
-.leo-game .tags{ display:flex; flex-wrap:wrap; gap:6px; }
-.leo-game .tag{
-  font-size:11px; padding:2px 8px; border-radius:999px;
-  color:#c9bcff; background:rgba(124,92,255,.16); border:1px solid rgba(124,92,255,.26);
-}
-.leo-game .actions{ display:flex; align-items:center; gap:8px; }
+.leo-game .actions{ display:flex; align-items:center; gap:8px; margin-top:2px; }
 .leo-game .path{
-  font-size:11px; color:#6f6d85; font-family:Consolas,Menlo,monospace;
-  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  font-family:var(--mono); font-size:11px; color:var(--muted); word-break:break-all;
 }
 .leo-fav{
-  margin-left:auto; border:none; background:transparent; cursor:pointer;
-  font-size:16px; line-height:1; padding:4px 6px; border-radius:8px; color:var(--muted);
+  width:32px; height:30px; flex:none; cursor:pointer; font-size:15px; line-height:1;
+  color:var(--muted); background:var(--panel);
+  border:1px solid var(--line-strong); border-radius:var(--radius);
 }
-.leo-fav:hover{ background:rgba(255,255,255,.08); }
-.leo-fav.on{ color:#fcd34d; }
+.leo-fav:hover{ color:var(--accent); border-color:var(--accent); }
+.leo-fav.on{ color:var(--accent); border-color:var(--accent); background:#f7ece7; }
 
-/* ================= 遮罩 / 空状态 ================= */
-.leo-lock{
-  padding:34px 22px; text-align:center; border-radius:18px;
-  border:1px dashed rgba(255,255,255,.16); background:rgba(255,255,255,.03);
+.leo-empty{
+  margin:0; padding:18px 20px; font-size:13px; color:var(--muted);
+  background:var(--panel); border:1px dashed var(--line-strong); border-radius:var(--radius);
 }
-.leo-lock .big{ font-size:30px; }
-.leo-lock h3{ margin:12px 0 8px; font-size:16px; }
-.leo-lock p{ margin:0 auto 18px; max-width:460px; color:var(--muted); font-size:13px; line-height:1.9; }
-.leo-empty{ padding:30px 12px; text-align:center; color:var(--muted); font-size:13px; line-height:1.9; }
-.leo-empty code{
-  color:#c4b5fd; background:rgba(124,92,255,.14); padding:2px 6px; border-radius:6px; font-size:12px;
-}
+
 /* ================= 表单 ================= */
-.leo-field{ display:flex; flex-direction:column; gap:6px; margin-bottom:13px; }
-.leo-field > label{ font-size:12.5px; color:var(--muted); font-weight:600; }
-.leo-field .tip{ font-size:11.5px; color:#6f6d85; line-height:1.7; }
+.leo-field{ display:flex; flex-direction:column; gap:5px; min-width:0; }
+.leo-field > label{ font-family:var(--mono); font-size:11.5px; color:var(--muted); }
 .leo-input,.leo-select,.leo-textarea{
-  width:100%; padding:10px 13px; font:inherit; font-size:13px; color:var(--text);
-  border-radius:12px; border:1px solid var(--border); background:rgba(255,255,255,.05);
-  outline:none; transition:.2s;
+  width:100%; padding:7px 10px; font:inherit; font-size:13.5px;
+  color:var(--ink); background:var(--panel);
+  border:1px solid var(--line-strong); border-radius:var(--radius);
 }
-.leo-textarea{ min-height:88px; resize:vertical; line-height:1.7; }
-.leo-input::placeholder,.leo-textarea::placeholder{ color:#6f6d85; }
+.leo-textarea{ resize:vertical; line-height:1.7; }
 .leo-input:focus,.leo-select:focus,.leo-textarea:focus{
-  border-color:rgba(124,92,255,.6); background:rgba(124,92,255,.08);
-  box-shadow:0 0 0 3px rgba(124,92,255,.15);
+  outline:2px solid rgba(157,61,42,.25); outline-offset:0; border-color:var(--accent);
 }
-.leo-select{ appearance:none; background-image:linear-gradient(45deg,transparent 50%,#8e8ca6 50%),linear-gradient(135deg,#8e8ca6 50%,transparent 50%); background-position:calc(100% - 17px) 50%,calc(100% - 12px) 50%; background-size:5px 5px,5px 5px; background-repeat:no-repeat; }
-.leo-select option{ background:#14141f; color:var(--text); }
+.leo-select{
+  appearance:none; -webkit-appearance:none; padding-right:26px;
+  background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);
+  background-position:calc(100% - 15px) 50%,calc(100% - 10px) 50%;
+  background-size:5px 5px,5px 5px; background-repeat:no-repeat;
+}
+.leo-select option{ background:var(--panel); color:var(--ink); }
 .leo-row{ display:flex; gap:10px; flex-wrap:wrap; }
 .leo-row > *{ flex:1; min-width:130px; }
-.leo-check{ display:flex; align-items:center; gap:8px; font-size:13px; color:var(--text); cursor:pointer; }
-.leo-check input{ width:16px; height:16px; accent-color:var(--accent); }
-.leo-msg{ font-size:12.5px; line-height:1.7; padding:9px 12px; border-radius:10px; margin-bottom:12px; display:none; }
+.leo-check{ display:flex; align-items:center; gap:8px; font-size:13px; color:var(--ink); cursor:pointer; }
+.leo-check input{ width:15px; height:15px; accent-color:var(--accent); }
+.leo-msg{ font-size:12.5px; line-height:1.7; padding:8px 11px; border-radius:2px; margin-bottom:12px; display:none; }
 .leo-msg.show{ display:block; }
-.leo-msg.err{ color:#fecaca; background:rgba(248,113,113,.14); border:1px solid rgba(248,113,113,.32); }
-.leo-msg.ok{ color:#bbf7d0; background:rgba(52,211,153,.14); border:1px solid rgba(52,211,153,.32); }
-.leo-msg.info{ color:#c9bcff; background:rgba(124,92,255,.14); border:1px solid rgba(124,92,255,.3); }
+.leo-msg.err{ color:#7b2317; background:#f8e7e3; border:1px solid #dfb3aa; }
+.leo-msg.ok{ color:#2f5436; background:#e8efe7; border:1px solid #b6cbb8; }
+.leo-msg.info{ color:#5c5344; background:var(--panel-2); border:1px solid var(--line-strong); }
+.leo-divider{ height:1px; background:var(--line); margin:20px 0; }
+.leo-kv{ display:flex; gap:12px; font-size:12.5px; color:var(--muted); flex-wrap:wrap; }
+.leo-kv b{ color:var(--ink); font-weight:650; }
 
+/* ================= 表格 ================= */
+.leo-table-wrap{ overflow-x:auto; border:1px solid var(--line-strong); border-radius:var(--radius); background:var(--panel); }
+.leo-table{ width:100%; border-collapse:collapse; font-size:13px; min-width:560px; }
+.leo-table th,.leo-table td{ padding:9px 12px; text-align:left; border-bottom:1px solid var(--line); }
+.leo-table th{ font-family:var(--mono); font-size:11.5px; font-weight:400; color:var(--muted); background:var(--panel-2); white-space:nowrap; }
+.leo-table tr:last-child td{ border-bottom:0; }
+.leo-table tbody tr:hover{ background:var(--panel-2); }
+.leo-table td.ops{ white-space:nowrap; }
+.leo-table .mono{ font-family:var(--mono); font-size:11.5px; color:var(--muted); }
 /* ================= 弹窗 ================= */
 .leo-modal-mask{
   position:fixed; inset:0; z-index:1200; display:none;
-  align-items:center; justify-content:center; padding:20px;
-  background:rgba(4,4,10,.68); backdrop-filter:blur(6px);
+  align-items:flex-start; justify-content:center; padding:56px 16px;
+  background:rgba(35,33,29,.46); overflow-y:auto;
 }
 .leo-modal-mask.open{ display:flex; }
 .leo-modal{
-  width:min(620px,100%); max-height:88vh; overflow:auto;
-  background:#0e0e17; border:1px solid var(--border); border-radius:22px;
-  box-shadow:0 30px 80px rgba(0,0,0,.7); padding:22px 22px 18px;
-  animation:leoPop .18s ease;
+  width:min(560px,100%); padding:20px 22px;
+  background:var(--panel); border:1px solid var(--ink); border-radius:var(--radius);
 }
 .leo-modal.wide{ width:min(940px,100%); }
-@keyframes leoPop{ from{ transform:translateY(10px) scale(.98); opacity:0; } }
 .leo-modal > header{
-  display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:16px;
+  display:flex; align-items:flex-start; gap:12px;
+  padding-bottom:10px; margin-bottom:16px; border-bottom:1px solid var(--line-strong);
 }
-.leo-modal > header h3{ margin:0; font-size:17px; }
-.leo-modal > header .sub{ margin:6px 0 0; font-size:12px; color:var(--muted); line-height:1.8; }
+.leo-modal > header h3{ margin:0; font-family:var(--serif); font-size:17px; font-weight:600; }
+.leo-modal > header .sub{ margin:5px 0 0; font-family:var(--mono); font-size:11.5px; color:var(--muted); }
 .leo-x{
-  border:1px solid var(--border); background:rgba(255,255,255,.05); color:var(--muted);
-  width:32px; height:32px; border-radius:10px; cursor:pointer; font-size:15px; flex:none;
+  margin-left:auto; width:26px; height:26px; flex:none; cursor:pointer;
+  color:var(--muted); background:transparent;
+  border:1px solid var(--line-strong); border-radius:2px; font-size:12px; line-height:1;
 }
-.leo-x:hover{ color:#fff; background:rgba(255,255,255,.1); }
+.leo-x:hover{ color:var(--ink); border-color:var(--ink); }
 .leo-modal footer{ display:flex; justify-content:flex-end; gap:9px; margin-top:16px; flex-wrap:wrap; }
 
 /* ================= 提示条 ================= */
 .leo-toasts{
-  position:fixed; z-index:1400; left:50%; bottom:26px; transform:translateX(-50%);
+  position:fixed; z-index:1400; left:50%; bottom:24px; transform:translateX(-50%);
   display:flex; flex-direction:column; gap:8px; align-items:center; pointer-events:none;
 }
 .leo-toast{
-  padding:10px 16px; border-radius:12px; font-size:13px; color:var(--text);
-  background:rgba(18,18,28,.96); border:1px solid var(--border);
-  box-shadow:0 16px 40px rgba(0,0,0,.55); animation:leoPop .18s ease;
+  padding:8px 14px; border-radius:2px; font-size:12.5px;
+  color:var(--paper); background:var(--ink); border:1px solid var(--ink);
   max-width:min(520px,86vw); text-align:center; line-height:1.7;
 }
-.leo-toast.ok{ border-color:rgba(52,211,153,.42); }
-.leo-toast.err{ border-color:rgba(248,113,113,.42); }
-/* ================= 标签页 ================= */
-.leo-tabs{ display:flex; gap:6px; flex-wrap:wrap; border-bottom:1px solid var(--border); padding-bottom:10px; margin-bottom:18px; }
-.leo-tab{
-  padding:9px 14px; border-radius:11px; font-size:13px; cursor:pointer; color:var(--muted);
-  border:1px solid transparent; background:transparent; font:inherit; font-weight:600;
-}
-.leo-tab:hover{ color:#fff; background:rgba(255,255,255,.06); }
-.leo-tab.active{ color:#fff; background:rgba(124,92,255,.22); border-color:rgba(124,92,255,.36); }
+.leo-toast.ok{ background:#2f5436; border-color:#2f5436; }
+.leo-toast.err{ background:#7b2317; border-color:#7b2317; }
 
-/* ================= 表格 ================= */
-.leo-table-wrap{ overflow-x:auto; border-radius:14px; border:1px solid var(--border); }
-.leo-table{ width:100%; border-collapse:collapse; font-size:13px; min-width:560px; }
-.leo-table th,.leo-table td{ padding:11px 12px; text-align:left; border-bottom:1px solid rgba(255,255,255,.06); }
-.leo-table th{ font-size:12px; color:var(--muted); font-weight:700; background:rgba(255,255,255,.04); white-space:nowrap; }
-.leo-table tbody tr:hover{ background:rgba(255,255,255,.035); }
-.leo-table td.ops{ white-space:nowrap; }
-.leo-table .mono{ font-family:Consolas,Menlo,monospace; font-size:12px; color:var(--muted); }
+/* ================= 标签页 ================= */
+.leo-tabs{ display:flex; gap:18px; flex-wrap:wrap; border-bottom:1px solid var(--line-strong); padding-bottom:0; margin-bottom:20px; }
+.leo-tab{
+  padding:7px 0; font:inherit; font-size:13.5px; font-weight:600; cursor:pointer;
+  color:var(--muted); background:transparent; border:0; border-bottom:2px solid transparent;
+}
+.leo-tab:hover{ color:var(--ink); }
+.leo-tab.active{ color:var(--ink); border-bottom-color:var(--accent); }
 
 /* ================= 编辑器 ================= */
 .leo-editor-bar{
   display:flex; align-items:center; gap:9px; flex-wrap:wrap;
-  padding:12px 14px; border-radius:14px; margin-bottom:16px;
-  background:rgba(124,92,255,.1); border:1px solid rgba(124,92,255,.28);
+  padding:11px 13px; border-radius:2px; margin-bottom:16px;
+  background:var(--panel-2); border:1px solid var(--line-strong); border-left:3px solid var(--accent);
 }
-.leo-editor-bar .title{ font-size:13px; font-weight:700; color:#c9bcff; margin-right:auto; }
+.leo-editor-bar .title{ font-size:13px; font-weight:650; margin-right:auto; }
 .leo-edit-item{
-  padding:14px; border-radius:16px; border:1px solid var(--border);
-  background:rgba(255,255,255,.035); margin-bottom:12px;
+  padding:14px; margin-bottom:12px;
+  background:var(--panel); border:1px solid var(--line-strong); border-radius:var(--radius);
 }
-.leo-edit-item > .head{
-  display:flex; align-items:center; gap:9px; margin-bottom:12px; flex-wrap:wrap;
-}
-.leo-edit-item > .head .name{ font-size:13.5px; font-weight:700; margin-right:auto; }
+.leo-edit-item > .head{ display:flex; align-items:center; gap:9px; margin-bottom:12px; flex-wrap:wrap; }
+.leo-edit-item > .head .name{ font-size:13.5px; font-weight:650; margin-right:auto; }
 .leo-edit-item .ops{ display:flex; gap:6px; flex-wrap:wrap; }
-.leo-divider{ height:1px; background:var(--border); margin:20px 0; }
-.leo-kv{ display:flex; gap:12px; font-size:12.5px; color:var(--muted); flex-wrap:wrap; }
-.leo-kv b{ color:var(--text); font-weight:600; }
+.leo-section > h2{
+  margin:0 0 14px; padding-bottom:7px; border-bottom:1px solid var(--line-strong);
+  font-family:var(--serif); font-weight:600; font-size:18px;
+}
+.leo-site-editor .leo-section{ margin-top:28px; }
 
 /* ================= 页脚 ================= */
 .leo-footer{
-  margin-top:44px; padding:22px 4px 0; border-top:1px solid var(--border);
-  font-size:12px; color:var(--muted); display:flex; gap:14px; flex-wrap:wrap;
-  align-items:center; justify-content:space-between;
+  margin-top:52px; padding:18px 0 0; border-top:1px solid var(--line-strong);
+  font-family:var(--mono); font-size:11.5px; color:var(--muted);
+  display:flex; gap:14px; flex-wrap:wrap; align-items:center; justify-content:space-between;
 }
-.leo-footer .links{ display:flex; gap:12px; flex-wrap:wrap; }
-.leo-footer a{ color:var(--muted); text-decoration:none; }
-.leo-footer a:hover{ color:#fff; }
+.leo-footer .links{ display:flex; gap:14px; flex-wrap:wrap; }
+.leo-footer a{ color:var(--muted); text-decoration:none; border-bottom:1px dotted var(--line-strong); }
+.leo-footer a:hover{ color:var(--ink); border-bottom-color:var(--ink); }
 
-.leo-mono{ font-family:Consolas,Menlo,monospace; font-size:12px; }
+/* ================= 工具类 ================= */
+.leo-mono{ font-family:var(--mono); font-size:12px; }
 .leo-muted{ color:var(--muted); }
 .leo-nowrap{ white-space:nowrap; }
 .leo-hidden{ display:none !important; }
@@ -391,3 +355,6 @@ a{ color:var(--accent2); }
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{ animation-duration:.001ms !important; animation-iteration-count:1 !important; transition-duration:.001ms !important; }
 }
+
+
+

@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#7c5cff">
+<meta name="theme-color" content="#f6f4ef">
 <title>Leo 的网页小站</title>
-<meta name="description" content="Leo 的网页小站：网页小游戏中心与音乐播放器，支持按权限等级分级的浏览器内可视化内容管理。">
+<meta name="description" content="Leo 的网页小站：网页小游戏中心与音乐播放器，站内页面全部开放访问，内容可在浏览器内可视化编辑。">
 <link rel="stylesheet" href="assets/css/leo-ui.css">
 </head>
 <body class="leo-page">
@@ -36,13 +36,14 @@
     <div class="leo-grid" id="featured"></div>
   </section>
 
-  <!-- 权限 4 内联编辑器（未登录 / 权限不足时自动隐藏） -->
-  <section class="leo-section leo-hidden" id="editor-sec">
+  <!-- 可视化编辑主页（默认收起，任何访问者都可以展开） -->
+  <section class="leo-section" id="editor-sec">
     <header>
-      <h2>可视化编辑主页 <span class="count">需要权限 4</span></h2>
-      <span class="hint">修改先保存在当前浏览器，点「导出 site.json」可提交到仓库让所有访问者生效</span>
+      <h2>可视化编辑主页 <span class="count" id="editor-state">已收起</span></h2>
+      <button class="leo-btn sm" id="btn-editor" type="button">展开编辑</button>
     </header>
-    <div class="leo-card pad" id="site-editor"></div>
+    <p class="hint" style="margin:-6px 0 14px">改动先保存在当前浏览器；点编辑器里的「导出 site.json」下载后提交到仓库，所有访问者才会看到</p>
+    <div class="leo-card pad leo-hidden" id="site-editor"></div>
   </section>
 
   <!-- 拓展板块（可在编辑器里增删） -->
@@ -51,23 +52,22 @@
   <footer class="leo-footer" id="footer"></footer>
 </main>
 
-<script src="assets/js/leo-auth.js"></script>
 <script src="assets/js/leo-site.js"></script>
 <script src="assets/js/leo-catalog.js"></script>
 <script src="assets/js/leo-ui.js"></script>
 <script>
 /*!
- * 主页逻辑：渲染 site.json 配置（hero / 公告 / 板块 / 拓展板块 / 页脚）、
- * 精选游戏，并在权限 4 时挂载 LEOSite.mountEditor 做可视化编辑。
+ * 主页逻辑：渲染 site.json 配置（hero / 公告 / 板块 / 拓展板块 / 页脚）与精选游戏，
+ * 并提供主页内容的可视化编辑（点标题右侧按钮展开，改动先保存在当前浏览器）。
  */
 (function () {
   'use strict';
-  var A = window.LEOAuth, S = window.LEOSite, C = window.LEOCatalog, U = window.LEOUI;
-  if (!A || !U) { try { console.error('[home] 需要先加载 leo-auth.js 与 leo-ui.js'); } catch (e) { /* ignore */ } return; }
+  var S = window.LEOSite, C = window.LEOCatalog, U = window.LEOUI;
+  if (!U) { try { console.error('[home] 需要先加载 leo-ui.js'); } catch (e) { /* ignore */ } return; }
 
   var esc = U.esc;
   var $ = function (sel) { return document.querySelector(sel); };
-  var editorMounted = false;
+  var editor = null, editorOpen = false;
   var FALLBACK = { brand: {}, hero: {}, blocks: [], sections: [], footer: { links: [] } };
 
   /* ======================== 通用渲染工具 ======================== */
@@ -94,8 +94,8 @@
         (g.featured ? '<span class="flag">精选</span>' : '') +
       '</a>' +
       '<div class="body">' +
-        '<div class="ttl">' + esc(g.name) + (g.hidden ? ' <span class="leo-perm p0">已隐藏</span>' : '') + '</div>' +
-        '<div class="desc">' + esc(g.desc || '暂无简介，可在管理中心的「游戏目录」里补充。') + '</div>' +
+        '<div class="ttl">' + esc(g.name) + (g.hidden ? ' <span class="leo-badge">已隐藏</span>' : '') + '</div>' +
+        '<div class="desc">' + esc(g.desc || '暂无简介，可在「管理中心 · 游戏目录」里补充。') + '</div>' +
         (g.tags && g.tags.length
           ? '<div class="tags">' + g.tags.map(function (t) { return '<span class="tag">' + esc(t) + '</span>'; }).join('') + '</div>'
           : '') +
@@ -103,23 +103,21 @@
         '<span class="path">game/' + esc(g.folder) + '/</span></div>' +
       '</div></article>';
   }
-  function actBtn(text, href, cap, cls) {
+  function actBtn(text, href, cls) {
     if (!text) return '';
-    var allowed = A.can(cap);
-    return '<button class="leo-btn ' + (cls || '') + '" type="button" data-goto="' + esc(href || '') +
-      '" data-cap="' + esc(cap) + '">' + (allowed ? '' : '🔒 ') + esc(text) + '</button>';
+    return '<button class="leo-btn ' + (cls || '') + '" type="button" data-goto="' + esc(href || '') + '">' +
+      esc(text) + '</button>';
   }
-
   /* ======================== 各区块渲染 ======================== */
   function renderHero(cfg) {
     var h = cfg.hero || {};
     $('#hero').innerHTML =
-      (h.tagline ? '<span class="tagline">✦ ' + esc(h.tagline) + '</span>' : '') +
+      (h.tagline ? '<span class="tagline">' + esc(h.tagline) + '</span>' : '') +
       '<h1>' + esc(h.title || '欢迎') + '</h1>' +
       '<p>' + esc(h.subtitle || '') + '</p>' +
       '<div class="actions">' +
-        actBtn(h.primaryText, h.primaryHref, 'viewGames', 'primary') +
-        actBtn(h.secondaryText, h.secondaryHref, 'useMusic') +
+        actBtn(h.primaryText, h.primaryHref, 'primary') +
+        actBtn(h.secondaryText, h.secondaryHref) +
       '</div>';
   }
 
@@ -128,27 +126,22 @@
     var box = $('#announce');
     if (!a.enabled || !a.text) { box.innerHTML = ''; return; }
     box.innerHTML = '<div class="leo-card pad" style="margin-top:16px">' +
-      '<div class="leo-kv"><b>📢 ' + esc(a.title || '站点公告') + '</b></div>' +
-      '<p style="margin:9px 0 0;color:var(--muted);font-size:13.5px;line-height:1.9">' + esc(a.text) + '</p></div>';
+      '<div class="leo-kv"><b>' + esc(a.title || '站点公告') + '</b></div>' +
+      '<p class="leo-muted" style="margin:9px 0 0;font-size:13.5px;line-height:1.9">' + esc(a.text) + '</p></div>';
   }
 
   function renderBlocks(cfg) {
     var blocks = (cfg.blocks || []).filter(function (b) { return b.enabled !== false; });
     var stats = (C && C.stats) ? C.stats() : { visible: 0 };
     $('#blocks').innerHTML = blocks.map(function (b) {
-      var cap = b.cap || 'viewHome';
-      var allowed = A.can(cap);
-      var extra = (b.kind === 'games')
-        ? '<span class="leo-muted leo-nowrap" style="font-size:11.5px">' + stats.visible + ' 个游戏</span>' : '';
-      var inner = '<span class="ico">' + esc(b.icon || '📄') + '</span>' +
+      var extra = (b.kind === 'games') ? '<span class="leo-muted">' + stats.visible + ' 个游戏</span>' : '';
+      var inner = '<span class="ico">' + esc(b.icon || '·') + '</span>' +
         '<div class="ttl">' + esc(b.title || '未命名板块') + extra + '</div>' +
         '<div class="desc">' + esc(b.desc || '') + '</div>' +
-        '<div class="foot">' + (b.kind === 'note' ? '说明板块' : (allowed ? '点击进入 →' : '需要更高权限')) + '</div>' +
-        (allowed || b.kind === 'note' ? '' : '<span class="lock">🔒</span>');
+        '<div class="foot">' + (b.kind === 'note' ? '说明板块' : '点击进入 →') + '</div>';
       if (b.kind === 'note' || !b.href) return '<div class="leo-tile dim">' + inner + '</div>';
-      return '<a class="leo-tile' + (allowed ? '' : ' dim locked') + '" href="' + esc(hrefFor(b.href)) +
-        '" data-cap="' + esc(cap) + '">' + inner + '</a>';
-    }).join('') || '<p class="leo-empty">暂无启用的板块，可在权限 4 的编辑器里新增。</p>';
+      return '<a class="leo-tile" href="' + esc(hrefFor(b.href)) + '">' + inner + '</a>';
+    }).join('') || '<p class="leo-empty">暂无启用的板块，可在下方编辑器里新增。</p>';
     $('#blocks-count').textContent = blocks.length + ' 个';
     $('#site-source').textContent = (S && S.sourceLabel) ? ('内容来源：' + S.sourceLabel()) : '';
   }
@@ -171,7 +164,7 @@
   function renderSections(cfg) {
     $('#sections').innerHTML = (cfg.sections || []).filter(function (s) { return s.enabled !== false; }).map(function (s) {
       return '<section class="leo-section"><header><h2>' + esc(s.title || '说明') + '</h2></header>' +
-        '<div class="leo-card pad"><p style="margin:0;color:var(--muted);font-size:13.5px;line-height:1.9">' +
+        '<div class="leo-card pad"><p class="leo-muted" style="margin:0;font-size:13.5px;line-height:1.9">' +
         esc(s.text || '') + '</p></div></section>';
     }).join('');
   }
@@ -184,15 +177,20 @@
     $('#footer').innerHTML = '<div>' + esc(f.text || '') + '</div><div class="links">' + links + '</div>';
   }
 
-  function renderEditor() {
-    var sec = $('#editor-sec');
-    if (!A.can('editSite')) { sec.classList.add('leo-hidden'); return; }
-    sec.classList.remove('leo-hidden');
-    if (!editorMounted && S && S.mountEditor) {
-      editorMounted = true;
-      S.mountEditor('#site-editor', { onSave: function () { renderAll(); } });
-    }
+  /* ======================== 主页编辑器（默认收起） ======================== */
+  var btnEditor = $('#btn-editor');
+  var editorBox = $('#site-editor');
+  function setEditorOpen(open) {
+    editorOpen = !!open;
+    editorBox.classList.toggle('leo-hidden', !editorOpen);
+    btnEditor.textContent = editorOpen ? '收起编辑' : '展开编辑';
+    var state = $('#editor-state');
+    if (state) state.textContent = editorOpen ? '编辑中' : '已收起';
+    if (!editorOpen || editor) return;
+    if (S && S.mountEditor) editor = S.mountEditor('#site-editor', { onSave: function () { renderAll(); } });
+    else editorBox.innerHTML = '<p class="leo-empty">站点配置模块（leo-site.js）未加载。</p>';
   }
+  btnEditor.addEventListener('click', function () { setEditorOpen(!editorOpen); });
 
   /* ======================== 总渲染 + 交互 ======================== */
   function renderAll() {
@@ -205,41 +203,26 @@
     renderFeatured();
     renderSections(cfg);
     renderFooter(cfg);
-    renderEditor();
   }
 
-  /* hero / 板块里的按钮与卡片：权限不足时给出提示并引导登录 */
-  function onGatedClick(ev) {
-    var hit = ev.target.closest('[data-cap]');
-    if (!hit) return;
-    var cap = hit.getAttribute('data-cap');
-    if (A.can(cap)) return;
-    ev.preventDefault();
-    U.guard(cap);
-  }
-  document.querySelector('main').addEventListener('click', onGatedClick);
+  /* 首屏按钮：直接跳到目标页面 */
   $('#hero').addEventListener('click', function (ev) {
     var btn = ev.target.closest('[data-goto]');
     if (!btn) return;
-    var cap = btn.getAttribute('data-cap');
-    if (!A.can(cap)) { U.guard(cap); return; }
     location.href = hrefFor(btn.getAttribute('data-goto'));
   });
 
   /* ======================== 启动 ======================== */
-  U.mountNav({ host: '#leo-nav', onAuth: function () { renderAll(); } });
-  A.on(renderAll);
+  U.mountNav({ host: '#leo-nav' });
   if (S && S.on) S.on(renderAll);
   if (C && C.on) C.on(renderAll);
   renderAll();
 
-  A.ready.then(function () {
-    return Promise.all([S && S.load ? S.load() : null, C && C.load ? C.load() : null]);
-  }).then(function () {
-    renderAll();
-  }).catch(function (err) {
-    try { console.error('[home] 初始化失败', err); } catch (e) { /* ignore */ }
-  });
+  Promise.all([(S && S.load) ? S.load() : null, (C && C.load) ? C.load() : null])
+    .then(function () { renderAll(); })
+    .catch(function (err) {
+      try { console.error('[home] 初始化失败', err); } catch (e) { /* ignore */ }
+    });
 })();
 </script>
 </body>

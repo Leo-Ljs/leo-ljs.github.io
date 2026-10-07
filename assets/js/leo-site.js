@@ -1,35 +1,44 @@
 /*!
- * Leo 站点 · 主页内容配置（可拓展） + 权限 4 可视化编辑器
+ * Leo 站点 · 主页内容配置（可拓展） + 可视化编辑器
  * ---------------------------------------------------------------------------
  * 数据优先级：本地保存(localStorage) > assets/data/site.json(可选) > 内置默认
  * 提供：LEOSite.get()/load()/save()/reset()/exportJSON()/importJSON()/mountEditor()
- * 主页(index.html) 与 管理中心(admin/index.html) 共用本模块，编辑入口要求权限 4。
+ * 主页(index.html) 与 管理中心(admin/index.html) 共用本模块；编辑器对所有人公开。
  */
 (function (global) {
   'use strict';
 
   var KEY = 'leoljs.site.v1';
   var FILE = 'assets/data/site.json';
-  var ROOT = (global.LEOAuth && global.LEOAuth.root) || './';
+  /* 站点根路径：本脚本位于 <根>/assets/js/ 下 */
+  var SCRIPT_URL = (document.currentScript && document.currentScript.src) || (function () {
+    var list = document.getElementsByTagName('script');
+    for (var i = list.length - 1; i >= 0; i--) {
+      if (/assets\/js\/leo-site\.js(\?|#|$)/.test(list[i].src || '')) return list[i].src;
+    }
+    return location.href;
+  })();
+  var ROOT;
+  try { ROOT = new URL('../../', SCRIPT_URL).href; } catch (e) { ROOT = './'; }
 
-  /* ======================== 默认内容（可被权限 4 覆盖） ======================== */
+  /* ======================== 默认内容（可被本地保存覆盖） ======================== */
   var DEFAULT_SITE = {
     version: 1,
     brand: { name: 'Leo 的网页小站', logo: 'L' },
     hero: {
       tagline: '小游戏 · 音乐 · 持续扩充中',
       title: '欢迎来到我的网页小站',
-      subtitle: '这里收录了自己整理的网页小游戏与音乐播放器。游戏中心会自动收录 game 目录下的所有子文件夹，音乐播放器会扫描 music 目录中的音频文件；站点内容可由超级管理员在页面上直接可视化编辑。',
+      subtitle: '这里收录了自己整理的网页小游戏与音乐播放器。游戏中心会自动收录 game 目录下的所有子文件夹，音乐播放器会扫描 music 目录中的音频文件；所有页面都可以直接打开，站点内容也能在页面上可视化编辑。',
       primaryText: '进入游戏中心',
       primaryHref: 'game/',
       secondaryText: '打开音乐播放器',
       secondaryHref: 'music/'
     },
     nav: [
-      { label: '主页', href: './', cap: 'viewHome' },
-      { label: '游戏中心', href: 'game/', cap: 'viewGames' },
-      { label: '音乐', href: 'music/', cap: 'useMusic' },
-      { label: '管理中心', href: 'admin/', cap: 'viewAccounts' }
+      { label: '主页', href: './' },
+      { label: '游戏中心', href: 'game/' },
+      { label: '音乐播放器', href: 'music/' },
+      { label: '管理中心', href: 'admin/' }
     ],
     announcement: {
       enabled: true,
@@ -38,19 +47,19 @@
     },
     blocks: [
       {
-        id: 'games', kind: 'games', cap: 'viewGames', enabled: true, icon: '🎮',
+        id: 'games', kind: 'games', enabled: true, icon: '游',
         title: '游戏中心', href: 'game/',
-        desc: '收录 game 目录下的全部网页小游戏，支持搜索、标签筛选、收藏与（管理员）可视化编辑。'
+        desc: '收录 game 目录下的全部网页小游戏，支持搜索、标签筛选、收藏与可视化编辑。'
       },
       {
-        id: 'music', kind: 'music', cap: 'useMusic', enabled: true, icon: '🎵',
+        id: 'music', kind: 'music', enabled: true, icon: '乐',
         title: '音乐播放器', href: 'music/',
         desc: '内置唱片机风格的播放器，自动扫描 music 目录中的音频文件，支持随机、循环与音量记忆。'
       },
       {
-        id: 'admin', kind: 'link', cap: 'viewAccounts', enabled: true, icon: '🛠️',
+        id: 'admin', kind: 'link', enabled: true, icon: '管',
         title: '管理中心', href: 'admin/',
-        desc: '查看站点状态、账户列表与游戏目录；超级管理员可在此管理账户与站点内容。'
+        desc: '查看站点状态与游戏目录；站点的内容与目录都可以在这里可视化编辑。'
       }
     ],
     sections: [
@@ -60,7 +69,7 @@
       }
     ],
     footer: {
-      text: 'Leo 的网页小站 · 纯静态站点，账户与内容配置保存在浏览器本地',
+      text: 'Leo 的网页小站 · 纯静态站点，内容配置保存在浏览器本地',
       links: [
         { label: '游戏中心', href: 'game/' },
         { label: '音乐播放器', href: 'music/' },
@@ -112,7 +121,6 @@
       if (!b.id) b.id = uid('blk');
       if (b.enabled == null) b.enabled = true;
       if (!b.kind) b.kind = 'link';
-      if (!b.cap) b.cap = b.kind === 'games' ? 'viewGames' : (b.kind === 'music' ? 'useMusic' : 'viewHome');
     });
     c.sections.forEach(function (s) { if (!s.id) s.id = uid('sec'); if (s.enabled == null) s.enabled = true; });
     return c;
@@ -167,7 +175,7 @@
     return { ok: true, config: save(data).config };
   }
   function sourceLabel() {
-    return { local: '管理员本地保存', file: FILE, default: '内置默认' }[source] || source;
+    return { local: '浏览器本地保存', file: FILE, default: '内置默认' }[source] || source;
   }
   /* ======================== 编辑器 工具 ======================== */
   function download(filename, text) {
@@ -219,10 +227,6 @@
     return '<div class="leo-field"><label>' + esc(label) + '</label>' +
       '<select class="leo-select" data-path="' + esc(path) + '">' + opts + '</select></div>';
   }
-  function capOptions() {
-    var caps = (global.LEOAuth && global.LEOAuth.CAPS) || [];
-    return caps.map(function (c) { return { v: c.key, label: c.label + '（需权限 ' + c.perm + '）' }; });
-  }
   var KIND_OPTIONS = [
     { v: 'games', label: '游戏板块（自动统计游戏数量）' },
     { v: 'music', label: '音乐板块' },
@@ -245,7 +249,7 @@
   /* ======================== 编辑器 模板 ======================== */
   function tplHead() {
     return '<div class="leo-editor-bar">' +
-      '<span class="title">主页内容编辑 · 需要权限 4</span>' +
+      '<span class="title">主页内容编辑</span>' +
       '<button class="leo-btn sm" data-act="export">导出 site.json</button>' +
       '<button class="leo-btn sm" data-act="import">导入 JSON</button>' +
       '<button class="leo-btn sm" data-act="reset">还原默认</button>' +
@@ -258,7 +262,6 @@
       return '<div class="leo-edit-item"><div class="head">' +
         '<span class="name">导航 ' + (i + 1) + '</span>' + opsBtns('nav', i, c.nav.length) + '</div>' +
         '<div class="leo-row">' + fText('名称', 'nav.' + i + '.label', n.label) + fText('链接', 'nav.' + i + '.href', n.href) + '</div>' +
-        fSelect('可见条件（权限）', 'nav.' + i + '.cap', n.cap, capOptions()) +
         '</div>';
     }).join('');
 
@@ -274,7 +277,6 @@
           fSelect('类型', 'blocks.' + i + '.kind', b.kind, KIND_OPTIONS) +
           fText('链接', 'blocks.' + i + '.href', b.href) +
         '</div>' +
-        fSelect('可见条件（权限）', 'blocks.' + i + '.cap', b.cap, capOptions()) +
         fCheck('在主页显示该板块', 'blocks.' + i + '.enabled', b.enabled) +
         '</div>';
     }).join('');
@@ -396,9 +398,9 @@
       }
 
       tap();
-      if (act === 'add-nav') { editing.nav.push({ label: '新导航', href: './', cap: 'viewHome' }); render(); return; }
+      if (act === 'add-nav') { editing.nav.push({ label: '新导航', href: './' }); render(); return; }
       if (act === 'add-block') {
-        editing.blocks.push({ id: uid('blk'), icon: '✨', title: '新板块', desc: '', href: '', kind: 'link', cap: 'viewHome', enabled: true });
+        editing.blocks.push({ id: uid('blk'), icon: '新', title: '新板块', desc: '', href: '', kind: 'link', enabled: true });
         render(); return;
       }
       if (act === 'add-sec') { editing.sections.push({ id: uid('sec'), title: '新拓展板块', text: '', enabled: true }); render(); return; }
