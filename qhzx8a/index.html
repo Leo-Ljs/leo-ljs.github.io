@@ -1,1 +1,623 @@
 
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#1667d6">
+<title>清华中学2026年八年级第一学期期中学情调研成绩查询</title>
+<style>
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:#e9ecef;
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    color:#222;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .phone{
+    position:relative;
+    max-width:430px;
+    min-height:100vh;
+    min-height:100dvh;
+    margin:0 auto;
+    background:#f7f7f7;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+    box-shadow:0 0 30px rgba(0,0,0,.10);
+  }
+
+  /* ---------- 状态栏 ---------- */
+  .statusbar{
+    height:44px;
+    flex:0 0 auto;
+    background:#fff;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:0 16px 0 14px;
+  }
+  .back-btn{
+    display:flex;align-items:center;justify-content:center;
+    width:26px;height:30px;
+    cursor:pointer;
+  }
+  .capsule{
+    width:88px;height:31px;
+    border:1px solid rgba(0,0,0,.06);
+    border-radius:999px;
+    background:#fff;
+    box-shadow:0 1px 3px rgba(0,0,0,.06);
+    display:flex;align-items:center;justify-content:space-around;
+    padding:0 6px;
+  }
+  .dots{display:flex;align-items:center;gap:3.5px;}
+  .dots i{width:4.5px;height:4.5px;border-radius:50%;background:#151515;display:block;}
+  .capsule .line{width:1px;height:16px;background:#ececec;}
+  .ring{
+    width:15px;height:15px;border:1.6px solid #151515;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .ring span{width:4.5px;height:4.5px;border-radius:50%;background:#151515;display:block;}
+
+  /* ---------- 蓝色横幅 ---------- */
+  .banner{
+    flex:0 0 auto;
+    min-height:122px;
+    background:#1667d6;
+    display:flex;align-items:center;justify-content:center;
+    padding:24px 16px;
+  }
+  .banner h1{
+    margin:0;
+    color:#fff;
+    font-size:clamp(17px,4.7vw,21px);
+    font-weight:600;
+    letter-spacing:.5px;
+    text-align:center;
+    line-height:1.6;
+  }
+
+  /* ---------- 页面容器 ---------- */
+  .page{flex:1 1 auto;display:flex;flex-direction:column;min-height:0;}
+  .hidden{display:none !important;}
+
+  /* ---------- 提示条 ---------- */
+  .tip{
+    background:#f7f7f7;
+    padding:17px 16px;
+    font-size:15px;
+    line-height:1.5;
+    color:#1c1c1c;
+    letter-spacing:.2px;
+  }
+
+  /* ---------- 表单行 ---------- */
+  .form-row{
+    background:#fff;
+    display:flex;
+    align-items:center;
+    padding:9px 16px;
+  }
+  .form-row label{
+    flex:0 0 auto;
+    width:76px;
+    font-size:20px;
+    color:#000;
+    letter-spacing:1px;
+  }
+  .form-row input{
+    flex:1 1 auto;
+    min-width:0;
+    height:44px;
+    border:1px solid #d8d8d8;
+    border-radius:2px;
+    background:#fff;
+    padding:0 12px;
+    font-size:17px;
+    color:#111;
+    outline:none;
+    font-family:inherit;
+    transition:border-color .15s;
+  }
+  .form-row input::placeholder{color:#bcbcbc;}
+  .form-row input:focus{border-color:#1667d6;}
+
+  /* ---------- 主按钮 ---------- */
+  .btn-wrap{padding:22px 16px 0;}
+  .btn-green{
+    width:100%;
+    height:56px;
+    border:none;
+    border-radius:4px;
+    background:#2cb82c;
+    color:#fff;
+    font-size:21px;
+    font-weight:500;
+    letter-spacing:3px;
+    font-family:inherit;
+    cursor:pointer;
+    box-shadow:0 1px 2px rgba(0,0,0,.06);
+    transition:background .12s, transform .06s;
+  }
+  .btn-green:active{background:#27a527;transform:scale(.995);}
+
+  .must-read{
+    text-align:center;
+    color:#6d6d6d;
+    font-size:15px;
+    padding:18px 0 4px;
+    letter-spacing:.5px;
+  }
+  .must-read span{cursor:pointer;}
+
+  .spacer{flex:1 1 auto;min-height:24px;}
+
+  /* ---------- 页脚 ---------- */
+  .footer{
+    flex:0 0 auto;
+    padding:14px 16px calc(18px + env(safe-area-inset-bottom));
+    text-align:center;
+    background:#f7f7f7;
+  }
+  .f-links{font-size:15px;color:#2f6fd8;line-height:1.6;}
+  .f-links a{color:#2f6fd8;text-decoration:none;}
+  .f-links .sep{color:#c8d7ee;margin:0 8px;}
+  .f-brand{margin-top:9px;font-size:15px;color:#3c3c3c;line-height:1.6;}
+  .f-brand b{font-weight:700;color:#111;}
+  .f-brand .ycf{color:#2ba245;text-decoration:none;font-weight:500;}
+
+  /* ---------- 结果页 ---------- */
+  .summary{
+    background:#fff;
+    padding:18px 16px 16px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+  }
+  .sm-left{min-width:0;}
+  .sm-name{
+    font-size:21px;
+    font-weight:600;
+    color:#111;
+    line-height:1.3;
+    word-break:break-all;
+  }
+  .sm-name em{font-style:normal;font-size:14px;color:#8a8a8a;font-weight:400;margin-left:4px;}
+  .sm-sub{margin-top:5px;font-size:13px;color:#8f8f8f;}
+  .sm-total{text-align:right;flex:0 0 auto;}
+  .sm-total .num{
+    font-size:34px;
+    font-weight:700;
+    color:#1667d6;
+    line-height:1;
+    letter-spacing:-1px;
+    font-variant-numeric:tabular-nums;
+  }
+  .sm-total .den{margin-top:6px;font-size:12px;color:#9a9a9a;}
+
+  .stat-row{
+    background:#fff;
+    display:flex;
+    border-top:1px solid #f0f0f0;
+    padding:12px 8px 14px;
+  }
+  .stat-row .item{flex:1;text-align:center;}
+  .stat-row .item + .item{border-left:1px solid #f0f0f0;}
+  .stat-row .k{font-size:12px;color:#9a9a9a;}
+  .stat-row .v{margin-top:5px;font-size:18px;font-weight:600;color:#222;}
+
+  .s-card{
+    background:#fff;
+    margin-top:10px;
+    padding:4px 0 6px;
+  }
+  .s-card-title{
+    padding:14px 16px 6px;
+    font-size:14px;
+    color:#8f8f8f;
+    letter-spacing:.5px;
+  }
+  .s-row{
+    display:flex;
+    align-items:center;
+    padding:11px 16px;
+  }
+  .s-row + .s-row{border-top:1px solid #f4f4f4;}
+  .s-name{
+    flex:0 0 44px;
+    font-size:16px;
+    color:#1c1c1c;
+    letter-spacing:1px;
+  }
+  .s-bar{
+    flex:1 1 auto;
+    height:7px;
+    margin:0 12px;
+    background:#eef2f9;
+    border-radius:99px;
+    overflow:hidden;
+  }
+  .s-bar i{
+    display:block;
+    height:100%;
+    width:0;
+    border-radius:99px;
+    background:linear-gradient(90deg,#4a9bf7,#1667d6);
+    transition:width .75s cubic-bezier(.22,.8,.28,1);
+  }
+  .s-score{
+    flex:0 0 auto;
+    width:66px;
+    text-align:right;
+    font-variant-numeric:tabular-nums;
+  }
+  .s-score b{font-size:17px;color:#1667d6;font-weight:600;}
+  .s-score small{font-size:12px;color:#a8a8a8;}
+  .s-grade{
+    flex:0 0 26px;
+    text-align:center;
+    font-size:13px;
+    font-weight:700;
+  }
+
+  .note{
+    text-align:center;
+    font-size:12px;
+    color:#a5a5a5;
+    padding:14px 16px 0;
+    line-height:1.6;
+  }
+  .result-btn{padding:18px 16px 0;}
+  .back-link{
+    text-align:center;
+    font-size:15px;
+    color:#1667d6;
+    padding:16px 0 6px;
+    cursor:pointer;
+  }
+
+  /* ---------- 提示 toast ---------- */
+  .toast{
+    position:fixed;
+    left:50%;
+    bottom:120px;
+    transform:translateX(-50%) translateY(8px);
+    background:rgba(0,0,0,.78);
+    color:#fff;
+    font-size:14px;
+    padding:10px 18px;
+    border-radius:6px;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .22s, transform .22s;
+    z-index:60;
+    white-space:nowrap;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  /* ---------- 弹层 ---------- */
+  .mask{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.45);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:0 34px;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .2s;
+    z-index:70;
+  }
+  .mask.show{opacity:1;pointer-events:auto;}
+  .dialog{
+    width:100%;
+    max-width:330px;
+    background:#fff;
+    border-radius:10px;
+    padding:22px 20px 18px;
+    transform:scale(.94);
+    transition:transform .2s;
+  }
+  .mask.show .dialog{transform:scale(1);}
+  .dialog h3{
+    margin:0 0 14px;
+    font-size:17px;
+    text-align:center;
+    color:#111;
+    font-weight:600;
+  }
+  .dialog p{
+    margin:0 0 9px;
+    font-size:14px;
+    line-height:1.65;
+    color:#555;
+  }
+  .dialog .btn-ok{
+    margin-top:14px;
+    width:100%;
+    height:44px;
+    border:none;
+    border-radius:4px;
+    background:#2cb82c;
+    color:#fff;
+    font-size:16px;
+    font-family:inherit;
+    cursor:pointer;
+  }
+  .dialog .btn-ok:active{background:#27a527;}
+</style>
+</head>
+<body>
+
+<div class="phone">
+
+  <!-- 顶部状态栏 -->
+  <div class="statusbar">
+    <div class="back-btn" id="topBack">
+      <svg width="12" height="21" viewBox="0 0 12 21" aria-hidden="true">
+        <path d="M10.2 1.6 L2.2 10.5 L10.2 19.4" fill="none" stroke="#151515"
+              stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <div class="capsule">
+      <div class="dots"><i></i><i></i><i></i></div>
+      <div class="line"></div>
+      <div class="ring"><span></span></div>
+    </div>
+  </div>
+
+  <!-- 蓝色横幅 -->
+  <div class="banner">
+    <h1>清华中学 2026 年八年级第一学期<br>期中学情调研成绩查询</h1>
+  </div>
+
+  <!-- ================= 查询页 ================= -->
+  <main class="page" id="pageQuery">
+    <div class="tip">测试姓名请输入 任意姓名 即可进入查询结果</div>
+
+    <div class="form-row">
+      <label for="nameInput">姓名</label>
+      <input id="nameInput" type="text" placeholder="请输入姓名" autocomplete="off"
+             maxlength="12" enterkeyhint="search">
+    </div>
+
+    <div class="btn-wrap">
+      <button class="btn-green" id="btnQuery">查询</button>
+    </div>
+
+    <div class="must-read"><span id="btnRead">查询必读</span></div>
+
+    <div class="spacer"></div>
+
+    <div class="footer">
+      <div class="f-links">
+        <a href="javascript:;">分享好友</a><span class="sep">|</span><a href="javascript:;">我的保存</a><span class="sep">|</span><a href="javascript:;">订阅通知</a>
+      </div>
+      <div class="f-brand">
+        本查询使用 <b>易查分</b> 制作，<a class="ycf" href="javascript:;">免费制作查询 &gt;</a>
+      </div>
+    </div>
+  </main>
+
+  <!-- ================= 结果页 ================= -->
+  <main class="page hidden" id="pageResult">
+    <div class="summary">
+      <div class="sm-left">
+        <div class="sm-name" id="whoName">—</div>
+        <div class="sm-sub">八年级第一学期期中学情调研 · 成绩单</div>
+      </div>
+      <div class="sm-total">
+        <div class="num" id="totalNum">0</div>
+        <div class="den">总分 / 620</div>
+      </div>
+    </div>
+
+    <div class="stat-row">
+      <div class="item"><div class="k">平均分</div><div class="v" id="avgNum">0</div></div>
+      <div class="item"><div class="k">等级</div><div class="v" id="gradeNum">—</div></div>
+      <div class="item"><div class="k">参考科目</div><div class="v">8 科</div></div>
+    </div>
+
+    <div class="s-card">
+      <div class="s-card-title">各科成绩</div>
+      <div id="sList"></div>
+    </div>
+
+    <div class="note">数据为模拟生成，仅用于页面效果演示</div>
+
+    <div class="result-btn">
+      <button class="btn-green" id="btnAgain">重新查询</button>
+    </div>
+    <div class="back-link" id="btnHome">返回查询首页</div>
+
+    <div class="spacer"></div>
+
+    <div class="footer">
+      <div class="f-links">
+        <a href="javascript:;">分享好友</a><span class="sep">|</span><a href="javascript:;">我的保存</a><span class="sep">|</span><a href="javascript:;">订阅通知</a>
+      </div>
+      <div class="f-brand">
+        本查询使用 <b>易查分</b> 制作，<a class="ycf" href="javascript:;">免费制作查询 &gt;</a>
+      </div>
+    </div>
+  </main>
+
+</div>
+
+<!-- 提示 -->
+<div class="toast" id="toast"></div>
+
+<!-- 查询必读弹层 -->
+<div class="mask" id="mask">
+  <div class="dialog">
+    <h3>查询必读</h3>
+    <p>1、本次查询为模拟演示，成绩数据由系统随机生成，不代表真实考试结果。</p>
+    <p>2、输入任意姓名，点击「查询」即可查看该姓名的成绩单。</p>
+    <p>3、语文、数学、英语满分 140 分；物理、政治、地理、生物、历史满分 100 分，总分 620 分。</p>
+    <p>4、等级依据得分率划分：A+ ≥ 93%，A ≥ 88%，B ≥ 80%，C ≥ 70%，其余为 D。</p>
+    <button class="btn-ok" id="btnOk">我知道了</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ========== 科目配置 ========== */
+  var SUBJECTS = [
+    { name: '语文', max: 140 },
+    { name: '数学', max: 140 },
+    { name: '英语', max: 140 },
+    { name: '物理', max: 100 },
+    { name: '政治', max: 100 },
+    { name: '地理', max: 100 },
+    { name: '生物', max: 100 },
+    { name: '历史', max: 100 }
+  ];
+  var TOTAL_MAX = SUBJECTS.reduce(function (s, x) { return s + x.max; }, 0); // 620
+
+  /* ========== 工具函数 ========== */
+  function randScore(max) {
+    var lo = Math.round(max * 0.55);            // 最低约 55%，贴近真实成绩感
+    return lo + Math.floor(Math.random() * (max - lo + 1));
+  }
+
+  function gradeOf(score, max) {
+    var r = score / max;
+    if (r >= 0.93) return { t: 'A+', c: '#e8590c' };
+    if (r >= 0.88) return { t: 'A',  c: '#2cb82c' };
+    if (r >= 0.80) return { t: 'B',  c: '#1667d6' };
+    if (r >= 0.70) return { t: 'C',  c: '#b07d00' };
+    return { t: 'D', c: '#cf2f2f' };
+  }
+
+  var toastEl = document.getElementById('toast');
+  var toastTimer = null;
+  function toast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () {
+      toastEl.classList.remove('show');
+    }, 1600);
+  }
+
+  /* ========== DOM ========== */
+  var pageQuery  = document.getElementById('pageQuery');
+  var pageResult = document.getElementById('pageResult');
+  var nameInput  = document.getElementById('nameInput');
+  var sList      = document.getElementById('sList');
+  var whoName    = document.getElementById('whoName');
+  var totalNum   = document.getElementById('totalNum');
+  var avgNum     = document.getElementById('avgNum');
+  var gradeNum   = document.getElementById('gradeNum');
+  var mask       = document.getElementById('mask');
+
+  /* ========== 渲染结果 ========== */
+  function render(name) {
+    var scores = SUBJECTS.map(function (s) {
+      return { name: s.name, max: s.max, score: randScore(s.max) };
+    });
+
+    var total = scores.reduce(function (a, b) { return a + b.score; }, 0);
+    var avg = total / scores.length;
+    var g = gradeOf(total, TOTAL_MAX);
+
+    whoName.innerHTML = escapeHtml(name) + '<em>同学</em>';
+    totalNum.textContent = total;
+    avgNum.textContent = avg.toFixed(1);
+    gradeNum.textContent = g.t;
+    gradeNum.style.color = g.c;
+
+    sList.innerHTML = scores.map(function (s) {
+      var sg = gradeOf(s.score, s.max);
+      var pct = (s.score / s.max) * 100;
+      return '' +
+        '<div class="s-row">' +
+          '<div class="s-name">' + s.name + '</div>' +
+          '<div class="s-bar"><i data-w="' + pct.toFixed(1) + '"></i></div>' +
+          '<div class="s-score"><b>' + s.score + '</b><small>/' + s.max + '</small></div>' +
+          '<div class="s-grade" style="color:' + sg.c + '">' + sg.t + '</div>' +
+        '</div>';
+    }).join('');
+
+    // 进度条动画
+    requestAnimationFrame(function () {
+      setTimeout(function () {
+        Array.prototype.forEach.call(sList.querySelectorAll('.s-bar i'), function (el) {
+          el.style.width = el.getAttribute('data-w') + '%';
+        });
+      }, 30);
+    });
+  }
+
+  function escapeHtml(str) {
+    return String(str).replace(/[&<>"']/g, function (c) {
+      return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c];
+    });
+  }
+
+  /* ========== 页面切换 ========== */
+  function showResult(name) {
+    render(name);
+    pageQuery.classList.add('hidden');
+    pageResult.classList.remove('hidden');
+    window.scrollTo(0, 0);
+  }
+
+  function showQuery(clear) {
+    pageResult.classList.add('hidden');
+    pageQuery.classList.remove('hidden');
+    if (clear) nameInput.value = '';
+  }
+
+  /* ========== 事件 ========== */
+  document.getElementById('btnQuery').addEventListener('click', function () {
+    var name = nameInput.value.trim();
+    if (!name) {
+      toast('请输入姓名');
+      nameInput.focus();
+      return;
+    }
+    showResult(name);
+  });
+
+  nameInput.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      document.getElementById('btnQuery').click();
+    }
+  });
+
+  document.getElementById('btnAgain').addEventListener('click', function () {
+    render(nameInput.value.trim() || '同学');   // 同姓名重新生成一组随机分
+    window.scrollTo({ top: 0 });
+  });
+
+  document.getElementById('btnHome').addEventListener('click', function () { showQuery(false); });
+
+  document.getElementById('topBack').addEventListener('click', function () {
+    if (!pageResult.classList.contains('hidden')) showQuery(false);
+  });
+
+  /* 查询必读 */
+  document.getElementById('btnRead').addEventListener('click', function () {
+    mask.classList.add('show');
+  });
+  document.getElementById('btnOk').addEventListener('click', function () {
+    mask.classList.remove('show');
+  });
+  mask.addEventListener('click', function (e) {
+    if (e.target === mask) mask.classList.remove('show');
+  });
+
+  /* 初始聚焦提示不自动弹键盘，保持与原图一致的静态观感 */
+})();
+</script>
+</body>
+</html>
