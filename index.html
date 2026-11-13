@@ -19,6 +19,10 @@
     <symbol id="i-folder" viewBox="0 0 24 24">
       <path d="M3 7.5A2.5 2.5 0 0 1 5.5 5H9l2 2h7.5A2.5 2.5 0 0 1 21 9.5v8a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5z"/>
     </symbol>
+    <symbol id="i-home" viewBox="0 0 24 24">
+      <path d="m3 11 9-8 9 8"/>
+      <path d="M5 10v10h5v-6h4v6h5V10"/>
+    </symbol>
     <symbol id="i-file" viewBox="0 0 24 24">
       <path d="M7 3h7l4 4v14H7z"/>
       <path d="M14 3v5h4"/>
@@ -86,15 +90,21 @@
   <header class="site-header" data-site-header>
     <div class="wrap nav-inner">
       <a class="brand" href="/" aria-label="Leo 的小站，回到首页">
-        <img class="brand-mark" src="/favicon.ico" width="34" height="34" alt="" aria-hidden="true">
+        <img class="brand-mark" src="/favicon.ico" width="44" height="44" alt="" aria-hidden="true">
         <span class="brand-text">Leo 的小站</span>
       </a>
       <button class="nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="site-nav" aria-label="打开菜单">
         <span class="nav-toggle-bars" aria-hidden="true"></span>
       </button>
       <nav class="site-nav" id="site-nav" aria-label="主导航">
-        <a href="/" data-nav="home">首页</a>
-        <a href="/pan/" data-nav="pan">网盘</a>
+        <a href="/" data-nav="home">
+          <svg class="icon" aria-hidden="true"><use href="#i-home"></use></svg>
+          首页
+        </a>
+        <a href="/pan/" data-nav="pan">
+          <img class="nav-icon" src="/assets/icons/clouddisk.ico" width="18" height="18" alt="" aria-hidden="true">
+          网盘
+        </a>
         <a class="nav-github" href="https://github.com/Leo-Ljs" target="_blank" rel="noopener noreferrer">
           <svg class="icon" aria-hidden="true"><use href="#i-github"></use></svg>
           GitHub
@@ -202,7 +212,7 @@
       <div class="grid-cards">
         <article class="site-card">
           <span class="icon-tile">
-            <svg class="icon" aria-hidden="true"><use href="#i-folder"></use></svg>
+            <img class="icon-tile-image" src="/assets/icons/clouddisk.ico" width="34" height="34" alt="" aria-hidden="true">
           </span>
           <h3>网盘 · 文件资源管理器</h3>
           <p>用熟悉的文件夹视图整理资料，支持搜索、排序和详情查看。文件不落在本站，统一跳转到蓝奏云等外部链接下载。</p>
@@ -266,7 +276,7 @@
     <div class="wrap footer-inner">
       <div class="footer-brand">
         <a class="brand" href="/">
-          <img class="brand-mark" src="/favicon.ico" width="34" height="34" alt="" aria-hidden="true">
+          <img class="brand-mark" src="/favicon.ico" width="44" height="44" alt="" aria-hidden="true">
           <span class="brand-text">Leo 的小站</span>
         </a>
         <p>一个慢慢长大的个人角落。如果这里刚好有你需要的东西，就拿去吧。</p>
