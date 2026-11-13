@@ -14,7 +14,7 @@
 - 站点页面使用根相对路径（`/assets/...`、`/pan/...`），方便任意子页面引用同一套壳。
 - 本地离线工具使用相对路径（`../assets/...`），因此可以直接双击 HTML 以 `file://` 打开。
 - 配色以薄荷绿和水色为主：`#f3faf7`、`#2e9d86`、`#1f7f6d`、`#e0f5ee`、`#17332e`。
-- 不加载外部字体和图片；图标全部是内联 SVG。
+- 不加载外部字体和图片；界面图标以内联 SVG 为主，站点与网盘标识使用本地 ICO。
 
 ## 目录结构
 
@@ -22,7 +22,7 @@
 .
 ├─ index.html                  首页
 ├─ 404.html                    404 页面
-├─ favicon.ico
+├─ favicon.ico                 站点图标 / 主页面品牌标识
 ├─ robots.txt
 ├─ .nojekyll                   关闭 GitHub Pages 的 Jekyll 处理
 ├─ assets/
@@ -36,6 +36,8 @@
 │  │  ├─ pan-scan.js           浏览器目录扫描（picker / input / 拖拽）
 │  │  ├─ pan-app.js            网盘查看页
 │  │  └─ pan-editor.js         在线 / 本地共用的编辑器
+│  ├─ icons/
+│  │  └─ clouddisk.ico         网盘页面图标 / 品牌标识
 │  └─ templates/
 │     └─ page.html             新页面模板
 ├─ pan/
