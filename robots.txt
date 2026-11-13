@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /pan/edit/
+Disallow: /tools/
+
+# 网盘外链内容不归本站抓取
