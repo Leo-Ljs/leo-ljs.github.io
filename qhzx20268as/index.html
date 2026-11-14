@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1e64d2">
+<meta name="robots" content="noindex, nofollow">
+<title>清华中学2026年888上期中成绩查询</title>
+<link rel="icon" href="/favicon.ico">
+<style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      margin: 0; background: #efefef; color: #333; font-size: 17px; line-height: 1.5;
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    }
+    .app { max-width: 640px; margin: 0 auto; background: #fff; min-height: 100vh; display: flex; flex-direction: column; box-shadow: 0 0 0 1px rgba(0, 0, 0, .04); }
+    .banner { background: #1e64d2; color: #fff; text-align: center; padding: 30px 18px; }
+    .banner h1 { margin: 0; font-size: clamp(16px, 4.7vw, 23px); font-weight: 700; letter-spacing: .04em; line-height: 1.4; }
+    .tip { margin: 0; padding: 15px 18px; background: #f7f7f7; border-bottom: 1px solid #ededed; color: #555; font-size: 16px; }
+    form { margin: 0; padding: 14px 18px 26px; background: #fff; }
+    .field { display: flex; align-items: center; min-height: 52px; }
+    .field + .field { border-top: 1px solid #f2f2f2; }
+    .field label { flex: 0 0 78px; font-size: 19px; color: #333; }
+    .field input {
+      flex: 1 1 auto; width: 100%; min-width: 0; height: 44px; padding: 0 12px; border: 1px solid #d9d9d9;
+      border-radius: 3px; background: #fff; color: #333; font-size: 17px; font-family: inherit; -webkit-appearance: none;
+    }
+    .field input::placeholder { color: #b5b5b5; }
+    .field input:focus { outline: none; border-color: #1e64d2; }
+    .field.is-hidden { display: none; }
+    .submit {
+      display: block; width: 100%; height: 52px; margin-top: 24px; border: 0; border-radius: 6px;
+      background: #07c160; color: #fff; font-size: 19px; font-family: inherit; letter-spacing: .18em;
+    }
+    .submit:active { background: #06ad56; }
+    .hint { margin: 12px 0 0; color: #d23c3c; font-size: 15px; }
+    .hint:empty { display: none; }
+    .same { margin-top: 12px; }
+    .same:empty { display: none; }
+    .same a {
+      display: block; padding: 11px 0; color: #1e64d2; font-size: 17px; text-decoration: none;
+      border-top: 1px solid #f0f0f0;
+    }
+    .readme { margin: 0; padding: 4px 18px 24px; background: #fff; text-align: center; }
+    .readme summary { display: block; padding: 8px 0; color: #666; font-size: 16px; cursor: pointer; list-style: none; }
+    .readme summary::-webkit-details-marker { display: none; }
+    .readme .notes {
+      margin-top: 10px; padding: 12px 14px; background: #fafafa; border-left: 2px solid #e4e4e4;
+      color: #777; font-size: 14px; line-height: 1.9; text-align: left;
+    }
+    .foot { margin: 0; padding: 18px; border-top: 1px solid #eee; background: #fff; color: #aaa; font-size: 13px; text-align: center; }
+    .result { padding: 26px 18px 44px; background: #fff; }
+    .result h2 { margin: 0 0 24px; text-align: center; color: #333; font-size: 25px; font-weight: 700; }
+    table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    th, td { border: 1px solid #a9cbea; padding: 13px 14px; color: #333; font-size: 18px; font-weight: 400; text-align: left; vertical-align: middle; }
+    th { width: 34%; background: #e9f2fb; }
+    td { background: #fff; }
+    td.stars { font-size: 20px; letter-spacing: .22em; }
+    .contact { margin: 22px 0 0; color: #2e7bd6; font-size: 16px; }
+    .again { margin: 16px 0 0; }
+    .again a { color: #2e7bd6; font-size: 16px; text-decoration: none; }
+    .is-hidden { display: none !important; }
+    .mock-nav, .mock-share, .mock-credit, .mock-toolbar { pointer-events: none; user-select: none; -webkit-user-select: none; }
+    .mock-nav {
+      position: sticky; top: 0; z-index: 20; display: flex; align-items: center;
+      height: 44px; padding: 0 10px; background: #f7f7f7; color: #111;
+      border-bottom: 1px solid rgba(0, 0, 0, .06);
+    }
+    .mock-nav .mock-back {
+      flex: 0 0 36px; display: flex; align-items: center; justify-content: flex-start;
+      height: 36px; margin-left: 2px; padding: 0 4px; border: 0; background: none; color: #111;
+      pointer-events: auto; cursor: pointer; -webkit-tap-highlight-color: transparent;
+    }
+    .mock-nav .mock-back::before {
+      content: ""; display: block; width: 11px; height: 11px;
+      border-left: 2px solid #111; border-bottom: 2px solid #111; border-radius: 1px;
+      transform: rotate(45deg); margin-left: 3px;
+    }
+    .mock-nav .mock-title {
+      position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+      max-width: calc(100% - 176px); text-align: center; font-size: 17px; font-weight: 500;
+      color: #111; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+    }
+    .mock-nav .mock-actions {
+      flex: 0 0 auto; margin-left: auto; display: flex; align-items: center; height: 31px; padding: 0 3px;
+      border: 1px solid rgba(0, 0, 0, .1); border-radius: 16px; background: #fff;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, .04);
+    }
+    .mock-nav .mock-dots { display: inline-flex; align-items: center; gap: 3px; padding: 0 9px; }
+    .mock-nav .mock-dots i { width: 4px; height: 4px; border-radius: 50%; background: #111; }
+    .mock-nav .mock-sep { display: block; width: 1px; height: 17px; background: rgba(0, 0, 0, .14); }
+    .mock-nav .mock-close { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; }
+    .mock-nav .mock-close b { position: relative; display: block; width: 20px; height: 20px; border: 3px solid #111; border-radius: 50%; }
+    .mock-nav .mock-close b::after { content: ""; position: absolute; left: 50%; top: 50%; width: 8px; height: 8px; margin: -4px 0 0 -4px; border-radius: 50%; background: #111; }
+    #view-query { flex: 1 1 auto; display: flex; flex-direction: column; }
+    .mock-share { margin-top: auto; display: flex; justify-content: center; align-items: center; padding: 20px 12px 8px; background: #fff; color: #2e7bd6; font-size: 15px; }
+    .mock-share span + span::before { content: "|"; margin: 0 14px; color: #c9d9ea; }
+    .mock-credit { margin: 0; padding: 6px 18px calc(22px + env(safe-area-inset-bottom)); background: #fff; color: #9a9a9a; font-size: 13px; text-align: center; }
+    .mock-credit .logo { display: inline-block; width: 14px; height: 14px; margin: 0 2px -2px 2px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #8fd0ff, #2f7fe0 70%); }
+    .mock-credit b { color: #333; font-weight: 600; }
+    .mock-credit em { font-style: normal; color: #07c160; }
+    .mock-toolbar { display: none; position: fixed; left: 50%; bottom: 0; z-index: 30; width: 100%; max-width: 640px; transform: translateX(-50%);
+      align-items: center; gap: 14px; padding: 9px 14px calc(9px + env(safe-area-inset-bottom)); background: rgba(255, 255, 255, .97); border-top: 1px solid #e6e6e6; }
+    #view-result:not(.is-hidden) .mock-toolbar { display: flex; }
+    #view-result:not(.is-hidden) { padding-bottom: 82px; }
+    .mock-toolbar .tb-left { flex: 1 1 auto; display: flex; align-items: center; gap: 5px; color: #2e7bd6; font-size: 13px; }
+    .mock-toolbar .tb-left i { width: 13px; height: 13px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #8fd0ff, #2f7fe0 70%); }
+    .mock-toolbar .tb-lock { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 3px; color: #666; font-size: 10px; }
+    .mock-toolbar .tb-lock b { position: relative; width: 15px; height: 12px; border: 2px solid #555; border-radius: 2px; }
+    .mock-toolbar .tb-lock b::before { content: ""; position: absolute; left: 50%; top: -8px; width: 9px; height: 9px; margin-left: -4.5px; border: 2px solid #555; border-bottom: 0; border-radius: 6px 6px 0 0; }
+    .mock-toolbar .tb-save { flex: 0 0 auto; display: flex; align-items: center; height: 34px; padding: 0 18px; border-radius: 4px; background: #07c160; color: #fff; font-size: 15px; letter-spacing: .04em; }
+</style>
+</head>
+<body>
+<main class="app">
+  <nav class="mock-nav"><button class="mock-back" id="mock-back" type="button" aria-label="返回"></button><span class="mock-title">清华中学2026年888上期中成绩查询</span><span class="mock-actions" aria-hidden="true"><span class="mock-dots"><i></i><i></i><i></i></span><span class="mock-sep"></span><span class="mock-close"><b></b></span></span></nav>
+  <section id="view-query">
+    <header class="banner"><h1>清华中学2026年888上期中成绩查询</h1></header>
+    <p class="tip">姓名要与名单一致，才能查到本次期中考试成绩</p>
+    <form id="query-form" autocomplete="off" novalidate>
+      <div class="field">
+        <label for="name">姓名</label>
+        <input id="name" name="name" type="text" placeholder="请输入姓名" maxlength="20" enterkeyhint="search">
+      </div>
+      <div class="field is-hidden" id="sid-field">
+        <label for="sid">学号</label>
+        <input id="sid" name="sid" type="text" inputmode="numeric" placeholder="请输入学号" maxlength="16">
+      </div>
+      <p class="hint" id="hint" role="status" aria-live="polite"></p>
+      <div class="same" id="same"></div>
+      <button class="submit" type="submit">查询</button>
+    </form>
+    <details class="readme">
+      <summary>查询必读</summary>
+      <div class="notes">
+        1. 只能查到名单里的姓名，请按成绩单上的写法输入，不要打错字。<br>
+        2. 名单里有同名的同学，系统会请你再选一个学号。<br>
+        3. 本页成绩为模拟数据，仅用于页面演示，不作任何正式依据。
+      </div>
+    </details>
+    <footer class="foot">成绩仅本人查看，请勿截图外传</footer>
+    <div class="mock-share" aria-hidden="true"><span>分享好友</span><span>我的保存</span><span>订阅通知</span></div>
+    <p class="mock-credit" aria-hidden="true">本查询使用<span class="logo"></span><b>易查分</b> 制作，<em>免费制作查询 &gt;</em></p>
+  </section>
+
+  <section id="view-result" class="result is-hidden">
+    <h2>查询结果</h2>
+    <table>
+      <tbody id="score-body"></tbody>
+    </table>
+    <p class="contact">对成绩有疑问请与老师联系。</p>
+    <p class="again"><a href="#" id="again">查询其他同学的成绩</a></p>
+    <div class="mock-toolbar" aria-hidden="true"><span class="tb-left"><i></i>发成绩用易查分</span><span class="tb-lock"><b></b>锁定</span><span class="tb-save">保存</span></div>
+  </section>
+</main>
+<script src="./scores.js?v=20261114b"></script>
+<script src="./query.js?v=20261114c"></script>
+</body>
+</html>
