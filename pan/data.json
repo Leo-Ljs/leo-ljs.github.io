@@ -1,128 +1,27 @@
 {
   "schemaVersion": 1,
   "type": "leoljs-pan",
-  "title": "Leo 的网盘",
-  "notice": "这里的文件都存放在外部网盘，点击下载会打开新页面。示例链接请替换成你自己的分享地址。",
-  "updatedAt": "2026-11-13",
+  "title": "我的网盘",
+  "notice": "",
+  "updatedAt": "2026-11-14",
   "tree": [
     {
-      "id": "n_study",
+      "id": "n_abb2b889-ec4e-49a0-81f1-9763fe4028e6",
       "type": "folder",
-      "name": "学习资料",
-      "description": "课程笔记、电子书和速查表。",
+      "name": "APP",
+      "description": "一些实用应用的安装程序或者绿色版",
       "children": [
         {
-          "id": "n_linear_algebra",
+          "id": "n_cfc2b76a-0584-4b96-b5a3-6e669828bb65",
           "type": "file",
-          "name": "线性代数笔记.pdf",
-          "url": "https://wwa.lanzouj.com/iSample01",
-          "code": "math",
-          "size": 2411724,
-          "updatedAt": "2026-10-28",
-          "description": "课堂笔记整理版，共 48 页。"
-        },
-        {
-          "id": "n_js_cheatsheet",
-          "type": "file",
-          "name": "JavaScript 速查表.pdf",
-          "url": "https://wwa.lanzouj.com/iSample02",
+          "name": "ChromeSetup.exe",
+          "url": "https://exe2.webgetstore.com/37efaf16a19c86a06d154f4a9480e5e6/6af82228/2026/11/14/4d53229b5f285ea1a5c3872bf1440f9c.exe?fn=ChromeSetup.exe",
           "code": "",
-          "size": 892928,
-          "updatedAt": "2026-09-16",
-          "description": "常用 API 与语法速查，适合打印。"
-        },
-        {
-          "id": "n_frontend",
-          "type": "folder",
-          "name": "前端学习路线",
-          "description": "从 HTML 基础到工程化的资料合集。",
-          "children": [
-            {
-              "id": "n_frontend_map",
-              "type": "file",
-              "name": "前端学习路线.png",
-              "url": "https://wwa.lanzouj.com/iSample03",
-              "code": "fe2026",
-              "size": 360448,
-              "updatedAt": "2026-11-02",
-              "description": "一张图看懂学习顺序。"
-            },
-            {
-              "id": "n_css_layout",
-              "type": "file",
-              "name": "CSS 布局笔记.pdf",
-              "url": "https://wwa.lanzouj.com/iSample04",
-              "code": "",
-              "size": 1245184,
-              "updatedAt": "2026-08-21",
-              "description": "Flex 与 Grid 的常见布局示例。"
-            }
-          ]
+          "size": 12414976,
+          "updatedAt": "2026-11-14",
+          "description": "Chrome浏览器Windows端的官方安装程序"
         }
       ]
-    },
-    {
-      "id": "n_tools",
-      "type": "folder",
-      "name": "软件工具",
-      "description": "常用的小工具和便携软件。",
-      "children": [
-        {
-          "id": "n_vscode",
-          "type": "file",
-          "name": "VS Code 便携版.zip",
-          "url": "https://wwa.lanzouj.com/iSample05",
-          "code": "code",
-          "size": 96468992,
-          "updatedAt": "2026-07-09",
-          "description": "解压即用，不写系统注册表。"
-        },
-        {
-          "id": "n_screentogif",
-          "type": "file",
-          "name": "ScreenToGif.zip",
-          "url": "https://wwa.lanzouj.com/iSample06",
-          "code": "",
-          "size": 8912896,
-          "updatedAt": "2026-06-18",
-          "description": "轻量的录屏转 GIF 工具。"
-        }
-      ]
-    },
-    {
-      "id": "n_media",
-      "type": "folder",
-      "name": "图片与影音",
-      "description": "一些好看的壁纸和随手拍的视频。",
-      "children": [
-        {
-          "id": "n_wallpaper",
-          "type": "file",
-          "name": "壁纸-薄荷绿.jpg",
-          "url": "https://wwa.lanzouj.com/iSample07",
-          "code": "",
-          "size": 1887436,
-          "updatedAt": "2026-10-01",
-          "description": "2560×1440，清爽的薄荷色。"
-        },
-        {
-          "id": "n_vlog",
-          "type": "file",
-          "name": "旅行 vlog.mp4",
-          "url": "https://wwa.lanzouj.com/iSample08",
-          "code": "trip",
-          "size": 104857600,
-          "updatedAt": "2026-05-04",
-          "description": "周末去海边的小记录。"
-        }
-      ]
-    },
-    {
-      "id": "n_empty",
-      "type": "folder",
-      "name": "空文件夹示例",
-      "description": "扫描空目录时也会保留这样的文件夹。",
-      "children": []
     }
   ]
 }
