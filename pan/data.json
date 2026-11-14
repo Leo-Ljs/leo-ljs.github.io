@@ -232,6 +232,126 @@
           "updatedAt": "2026-03-29"
         }
       ]
+    },
+    {
+      "id": "n_3fe1ba31-6693-4bcc-b871-dc9b68169f57",
+      "type": "folder",
+      "name": "Programming",
+      "description": "一些编程的程序",
+      "children": [
+        {
+          "id": "n_826f7004-c4c8-4d5f-8402-d7b996d224d8",
+          "type": "folder",
+          "name": "C++",
+          "description": "C++工具",
+          "children": [
+            {
+              "id": "n_ce291b40-744c-4ff1-b813-cec0b391ad3b",
+              "type": "file",
+              "name": "C++HeadersFile",
+              "url": "https://42-4-59-151-v3.pd1.cjjd19.com/user-other-free-download-cdn.123295.com/123-465/a61559e6/1852573910-0/a61559e6a00f60d63dea38ee6473e1d1/c-m8006?urn=0&d_v=2&r=1DDTLE&v=5&t=1795252311&bzc=1&bzs=313835323537333931303a323a313a3133303735&bi=187241963&d_k=35113a0c42a3037d4c89d7c69db0f06b2b9c6cb9d67a7586b1bd76fd54424dee&d_r=mvuun&bzp=0&ur=velglmgvnlgue&s=17952523116bd49d22ba229f0695e7ff2afb169d7e&filename=CHF.7z&cache_type=2&x-mf-biz-cid=db329c03-c772-4589-83df-5b3345811494&auto_redirect=0&ndcp=1",
+              "code": "",
+              "size": 13075,
+              "updatedAt": "2026-11-14",
+              "description": "C++一些有用的头文件"
+            }
+          ]
+        },
+        {
+          "id": "n_3a35a2e9-06fe-40c2-90d4-febe35b40c0d",
+          "type": "folder",
+          "name": "Python",
+          "description": "Python工具&作品",
+          "children": [
+            {
+              "id": "n_f5e7026c-a7fa-4423-be4d-a12d04551eb1",
+              "type": "file",
+              "name": "an opus.py",
+              "url": "https://42-4-59-151-v3.pd1.cjjd19.com/user-other-free-download-cdn.123295.com/123-860/2c5ad126/1852573910-0/2c5ad126e3d019586de86304d748b75c/c-m8010?bzc=1&bzp=0&bi=187241963&urn=0&d_r=mvuun&r=NMQS2B&v=5&bzs=313835323537333931303a323a313a33333230&ur=velglmgvnlgue&d_k=35113a0c42a3037d4c89d7c69db0f06b2b9c6cb9d67a7586b1bd76fd54424dee&d_v=2&t=1795252378&s=17952523784fee9eb6947b047346c65115cee2311d&filename=an+opus.py&cache_type=2&x-mf-biz-cid=026af8b8-08a0-41e0-afcc-366f76741e54&auto_redirect=0&ndcp=1",
+              "code": "",
+              "size": 3320,
+              "updatedAt": "2026-11-14",
+              "description": "一个作品"
+            },
+            {
+              "id": "n_b87ff969-c298-43b7-ac7a-2e4811cabe00",
+              "type": "file",
+              "name": "Easygui-2016.zip",
+              "url": "https://42-4-59-151-v3.pd1.cjjd19.com/user-other-free-download-cdn.123295.com/123-163/078ec9e6/1787927-0/078ec9e67036951cba783ecd71bbdca3/c-m8001?ur=velglmgvnlgue&urn=0&d_k=35113a0c42a3037d4c89d7c69db0f06b2b9c6cb9d67a7586b1bd76fd54424dee&d_v=2&r=FBAG5B&v=5&bzp=0&bi=187241963&d_r=mvuun&t=1795252509&bzc=1&bzs=313835323537333931303a323a313a31393138313035&s=17952525090ee4df8ef08d82ef0a95fc762a0f37f7&filename=Easygui-2016+First+Updates.zip&cache_type=1&x-mf-biz-cid=c2ff75af-0e70-442f-95cd-fed1984ab37f&auto_redirect=0&ndcp=1",
+              "code": "",
+              "size": 1918105,
+              "updatedAt": "2026-11-14",
+              "description": "一个Python的简易GUI库"
+            }
+          ]
+        },
+        {
+          "id": "n_86f88e08-f611-494f-ba55-b88ef4becabd",
+          "type": "folder",
+          "name": "E",
+          "description": "易语言作品",
+          "children": [
+            {
+              "id": "n_cb5f47f9-f76f-4f4d-88a5-eb3b2dbd1fc5",
+              "type": "file",
+              "name": "E.7z",
+              "url": "https://42-4-59-151-v3.pd1.cjjd19.com/user-other-free-download-cdn.123295.com/123-892/38b64c34/1852573910-0/38b64c346bdc796165728d5c6357c37c/c-m8006?r=6F3KZV&v=5&bzc=1&bi=187241963&urn=0&d_r=mvuun&d_v=2&t=1795252529&bzs=313835323537333931303a323a313a3130303834333232&bzp=0&ur=velglmgvnlgue&d_k=35113a0c42a3037d4c89d7c69db0f06b2b9c6cb9d67a7586b1bd76fd54424dee&s=1795252529fc6739f6a9fe4bd97eb7b78a03b067ea&filename=e.7z&cache_type=2&x-mf-biz-cid=37a4cc5a-f406-4fc9-b6e3-bcc92cefdf39&auto_redirect=0&ndcp=1",
+              "code": "",
+              "size": 10084322,
+              "updatedAt": "2026-11-14",
+              "description": "自己写的易语言的一些作品"
+            },
+            {
+              "id": "n_ad42e1fe-6f5e-4cb9-994f-1cd01262f524",
+              "type": "file",
+              "name": "goomfive1.25.exe",
+              "url": "https://42-4-59-151-v3.pd1.cjjd19.com/user-other-free-download-cdn.123295.com/123-630/c655e3cf/1852573910-0/c655e3cf9727f231b700085073d46276/c-m8010?t=1795252689&bzc=1&bzs=313835323537333931303a323a313a393133343038&bi=187241963&urn=0&d_r=mvuun&d_v=2&r=HPTK72&v=5&bzp=0&ur=velglmgvnlgue&d_k=35113a0c42a3037d4c89d7c69db0f06b2b9c6cb9d67a7586b1bd76fd54424dee&s=1795252689869ec88f9ae8efe35dc393e33ea38863&filename=goomfive1.25.exe&cache_type=2&x-mf-biz-cid=36fe09c1-691a-49e1-9416-c4c120644ba3&auto_redirect=0&ndcp=1",
+              "code": "",
+              "size": 913408,
+              "updatedAt": "2026-11-14",
+              "description": "古木五子棋v1.25"
+            }
+          ]
+        },
+        {
+          "id": "n_cf565b35-51b1-4dc5-a649-91ad72d769fa",
+          "type": "folder",
+          "name": "Scratch",
+          "description": "Scratch作品",
+          "children": [
+            {
+              "id": "n_c7b73a24-b202-4faf-a405-529e85083b70",
+              "type": "file",
+              "name": "Game Pro.sb3",
+              "url": "https://42-4-59-151-v3.pd1.cjjd19.com/user-other-free-download-cdn.123295.com/123-809/8b16425b/1813895335-0/8b16425bc035722b09d91a3f0cb3eb29/c-m8001?d_k=35113a0c42a3037d4c89d7c69db0f06b2b9c6cb9d67a7586b1bd76fd54424dee&d_v=2&r=Q49MH1&t=1795252736&bzs=313835323537333931303a323a313a313332303534&bzp=0&bi=187241963&ur=velglmgvnlgue&urn=0&d_r=mvuun&v=5&bzc=1&s=1795252736e27125fc3fede8bb5caf73fd56831f6e&filename=Game+Pro%28Minecraft+Edition%29.sb3&cache_type=1&x-mf-biz-cid=140e84d1-e372-4502-a2f5-70d6e96bdd35&auto_redirect=0&ndcp=1",
+              "code": "",
+              "size": 132054,
+              "updatedAt": "2026-11-14",
+              "description": "消消乐"
+            },
+            {
+              "id": "n_d81e94cf-6305-4654-bf03-76afc3db994f",
+              "type": "file",
+              "name": "Game Pro(Minecraft Edition).sb3",
+              "url": "https://42-4-59-151-v3.pd1.cjjd19.com/user-other-free-download-cdn.123295.com/123-601/3b1a9a1b/1852573910-0/3b1a9a1bddd027e85376ebcce3823659/c-m8010?v=5&t=1795252987&bzc=1&bi=187241963&r=0QKXG0&bzs=313835323537333931303a323a313a31343739363731&bzp=0&ur=velglmgvnlgue&urn=0&d_k=35113a0c42a3037d4c89d7c69db0f06b2b9c6cb9d67a7586b1bd76fd54424dee&d_r=mvuun&d_v=2&s=17952529874cf2672fcf2421dfa70f52bbb8f05561&filename=Game+Pro%28Minecraft+Edition%29.sb3&cache_type=2&x-mf-biz-cid=246ed13a-9c98-4a0c-89cc-494ff3226d75&auto_redirect=0&ndcp=1",
+              "code": "",
+              "size": 1479671,
+              "updatedAt": "2026-11-14",
+              "description": "消消乐Minecraft版"
+            },
+            {
+              "id": "n_0b746f75-71f3-45b0-a232-88bac3e5d618",
+              "type": "file",
+              "name": "Other opus.7z",
+              "url": "https://42-4-59-151-v3.pd1.cjjd19.com/user-other-free-download-cdn.123295.com/123-694/4199672b/1852573910-0/4199672b662682abd8051b023b04e2b6/c-m42?v=5&t=1795253276&bzs=313835323537333931303a323a313a333338373734363736&bzp=0&bi=187241963&ur=velglmgvnlgue&d_v=2&bzc=1&urn=0&d_k=35113a0c42a3037d4c89d7c69db0f06b2b9c6cb9d67a7586b1bd76fd54424dee&d_r=mvuun&r=CC4T7X&s=17952532768eb2f04be083440a743a731a278a090f&filename=Other+opus.7z&cache_type=2&x-mf-biz-cid=db1cb643-7215-4c8a-85f7-027d7812dc20&auto_redirect=0&ndcp=1",
+              "code": "",
+              "size": 338774676,
+              "updatedAt": "2026-11-14",
+              "description": "其他作品的压缩包"
+            }
+          ]
+        }
+      ]
     }
   ]
 }
