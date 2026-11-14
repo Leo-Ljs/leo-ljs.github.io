@@ -1,57 +1,57 @@
 /* =============================================================
    Leo 的小站 · 设计系统
    -------------------------------------------------------------
-   深色科技风：网格、细线、少量圆角、毛玻璃。
+   浅蓝科技风：网格、细线、少量圆角、毛玻璃。
    这里只放设计令牌、站点壳和通用组件，页面专属样式在
    pan.css / editor.css 里，首页的滑动面板也在这里。
    ============================================================= */
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 
   /* 底色与表面 */
-  --bg: #060a0e;
-  --bg-deep: #03060a;
-  --bg-raise: #0a1116;
-  --surface: rgba(11, 18, 24, 0.72);
-  --surface-solid: #0a1116;
-  --surface-soft: rgba(17, 27, 34, 0.62);
-  --surface-tint: rgba(94, 234, 212, 0.05);
-  --surface-raised: rgba(22, 34, 42, 0.9);
-  --glass: rgba(7, 12, 16, 0.55);
+  --bg: #eaf2fb;
+  --bg-deep: #dfeaf7;
+  --bg-raise: #f4f9ff;
+  --surface: rgba(255, 255, 255, 0.66);
+  --surface-solid: #f7fbff;
+  --surface-soft: rgba(226, 238, 250, 0.66);
+  --surface-tint: rgba(31, 111, 208, 0.05);
+  --surface-raised: rgba(255, 255, 255, 0.9);
+  --glass: rgba(243, 249, 255, 0.62);
   --glass-blur: 18px;
 
   /* 文字 */
-  --ink: #e8f4f6;
-  --ink-soft: #a3b7c0;
-  --ink-faint: #6d838d;
+  --ink: #10263a;
+  --ink-soft: #3f5b74;
+  --ink-faint: #677f95;
 
   /* 线 */
-  --line: rgba(140, 205, 220, 0.14);
-  --line-strong: rgba(140, 205, 220, 0.3);
-  --line-faint: rgba(140, 205, 220, 0.07);
+  --line: rgba(24, 70, 116, 0.14);
+  --line-strong: rgba(24, 70, 116, 0.3);
+  --line-faint: rgba(24, 70, 116, 0.07);
 
   /* 强调色 */
-  --accent: #5eead4;
-  --accent-deep: #2dd4bf;
-  --accent-dim: #1c8d82;
-  --accent-wash: rgba(94, 234, 212, 0.09);
-  --blue: #7dd3fc;
-  --blue-wash: rgba(125, 211, 252, 0.09);
+  --accent: #1f6fd0;
+  --accent-deep: #14549f;
+  --accent-dim: #3c6f9e;
+  --accent-wash: rgba(31, 111, 208, 0.09);
+  --blue: #2f8fd8;
+  --blue-wash: rgba(47, 143, 216, 0.09);
 
   /* 状态色 */
-  --danger: #ff9d9d;
-  --danger-soft: rgba(255, 110, 110, 0.1);
-  --danger-line: rgba(255, 120, 120, 0.32);
-  --warn: #f4c76a;
-  --warn-soft: rgba(244, 199, 106, 0.1);
-  --warn-line: rgba(244, 199, 106, 0.32);
-  --ok: #7ee7b9;
+  --danger: #bd4242;
+  --danger-soft: rgba(189, 66, 66, 0.08);
+  --danger-line: rgba(189, 66, 66, 0.3);
+  --warn: #8f6512;
+  --warn-soft: rgba(143, 101, 18, 0.1);
+  --warn-line: rgba(143, 101, 18, 0.3);
+  --ok: #1f7a5c;
 
-  /* 阴影：深色下只用暗投影和极细高光 */
-  --shadow-sm: 0 1px 0 rgba(255, 255, 255, 0.03);
-  --shadow: 0 24px 60px -34px rgba(0, 0, 0, 0.95);
-  --shadow-lg: 0 50px 120px -60px rgba(0, 0, 0, 1);
+  /* 阴影：浅色下用淡蓝投影和顶部高光 */
+  --shadow-sm: 0 1px 0 rgba(255, 255, 255, 0.7);
+  --shadow: 0 24px 60px -40px rgba(21, 61, 102, 0.45);
+  --shadow-lg: 0 50px 120px -64px rgba(21, 61, 102, 0.5);
 
   /* 圆角：只保留必要的几个 */
   --radius-xs: 2px;
@@ -73,7 +73,7 @@
   --mint: var(--accent);
   --mint-deep: var(--accent-deep);
   --mint-soft: var(--accent-wash);
-  --blue-soft: rgba(125, 211, 252, 0.12);
+  --blue-soft: rgba(47, 143, 216, 0.12);
 }
 
 /* ---------- 基础 ---------- */
@@ -100,8 +100,8 @@ body {
   min-height: 100vh;
   color: var(--ink);
   background:
-    radial-gradient(1100px 760px at 82% -8%, rgba(45, 212, 191, 0.1), transparent 62%),
-    radial-gradient(880px 620px at 4% 4%, rgba(125, 211, 252, 0.07), transparent 66%),
+    radial-gradient(1100px 760px at 82% -8%, rgba(31, 111, 208, 0.1), transparent 62%),
+    radial-gradient(880px 620px at 4% 4%, rgba(47, 143, 216, 0.07), transparent 66%),
     var(--bg);
   font-family: var(--font);
   font-size: 16px;
@@ -125,8 +125,8 @@ a {
 }
 
 ::selection {
-  background: rgba(94, 234, 212, 0.24);
-  color: #f2fffd;
+  background: rgba(31, 111, 208, 0.22);
+  color: #0f2438;
 }
 
 :focus-visible {
@@ -200,7 +200,7 @@ ol {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, transparent 0%, rgba(94, 234, 212, 0.028) 48%, transparent 52%);
+  background: linear-gradient(180deg, transparent 0%, rgba(31, 111, 208, 0.028) 48%, transparent 52%);
   background-size: 100% 420px;
   animation: field-scan 14s linear infinite;
   opacity: 0.7;
@@ -246,8 +246,8 @@ ol {
   font-family: var(--mono);
   font-size: 12px;
   letter-spacing: 0.08em;
-  color: var(--bg-deep);
-  background: var(--accent);
+  color: #ffffff;
+  background: var(--accent-deep);
   border-radius: var(--radius-sm);
   transition: transform 0.2s var(--ease);
 }
@@ -301,7 +301,7 @@ ol {
   width: 22px;
   height: 1px;
   background: var(--accent);
-  box-shadow: 0 0 8px rgba(94, 234, 212, 0.5);
+  box-shadow: 0 0 8px rgba(31, 111, 208, 0.5);
 }
 
 .text-link {
@@ -371,11 +371,11 @@ ol {
 
 .btn-primary {
   color: var(--accent);
-  border-color: rgba(94, 234, 212, 0.4);
+  border-color: rgba(31, 111, 208, 0.4);
 }
 
 .btn-primary:hover {
-  color: #b8fff4;
+  color: var(--accent-deep);
   border-color: var(--accent);
 }
 
@@ -439,7 +439,7 @@ ol {
 
 .btn-icon:hover {
   color: var(--accent);
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(21, 61, 102, 0.06);
 }
 
 .btn[disabled],
@@ -508,7 +508,7 @@ ol {
 
 .badge-blue {
   color: var(--blue);
-  border-color: rgba(125, 211, 252, 0.32);
+  border-color: rgba(47, 143, 216, 0.32);
 }
 
 .badge-warn {
@@ -542,7 +542,7 @@ ol {
 }
 
 .site-header.is-scrolled {
-  background: rgba(5, 9, 13, 0.82);
+  background: rgba(242, 248, 255, 0.82);
   border-bottom-color: var(--line);
 }
 
@@ -573,7 +573,7 @@ ol {
 
 .brand:hover .brand-mark {
   border-color: var(--line-strong);
-  box-shadow: 0 0 24px -8px rgba(94, 234, 212, 0.55);
+  box-shadow: 0 0 24px -8px rgba(31, 111, 208, 0.55);
 }
 
 .brand-text {
@@ -743,7 +743,7 @@ ol {
   position: relative;
   display: inline-block;
   color: var(--accent);
-  text-shadow: 0 0 42px rgba(94, 234, 212, 0.24);
+  text-shadow: 0 0 42px rgba(31, 111, 208, 0.24);
 }
 
 .accent-text::after {
@@ -887,7 +887,7 @@ ol {
   padding: 11px 16px;
   font-family: var(--mono);
   font-size: 11.5px;
-  border-bottom: 1px solid rgba(140, 205, 220, 0.05);
+  border-bottom: 1px solid rgba(24, 70, 116, 0.05);
 }
 
 .log-key {
@@ -921,7 +921,7 @@ ol {
   top: 0;
   bottom: 0;
   width: 40%;
-  background: linear-gradient(90deg, transparent, rgba(94, 234, 212, 0.45), transparent);
+  background: linear-gradient(90deg, transparent, rgba(31, 111, 208, 0.45), transparent);
   animation: wave-slide 3.6s var(--ease) infinite;
 }
 
@@ -972,7 +972,7 @@ ol {
   height: 100svh;
   min-height: 620px;
   border-top: 1px solid var(--line-faint);
-  background: linear-gradient(180deg, rgba(6, 10, 14, 0) 0%, rgba(4, 8, 11, 0.72) 100%);
+  background: linear-gradient(180deg, rgba(234, 242, 251, 0) 0%, rgba(223, 234, 247, 0.72) 100%);
 }
 
 .deck-head {
@@ -1109,7 +1109,7 @@ ol {
 
 .spec-grid > div {
   padding: 18px 20px;
-  background: rgba(8, 13, 17, 0.72);
+  background: rgba(255, 255, 255, 0.72);
 }
 
 .spec-grid dt {
@@ -1212,7 +1212,7 @@ ol {
   align-items: center;
   gap: 10px;
   padding: 7px 8px;
-  border-bottom: 1px solid rgba(140, 205, 220, 0.04);
+  border-bottom: 1px solid rgba(24, 70, 116, 0.04);
 }
 
 .mini-window .window-icon {
@@ -1468,7 +1468,7 @@ ol {
   height: 100%;
   width: 20%;
   background: var(--accent);
-  box-shadow: 0 0 10px rgba(94, 234, 212, 0.6);
+  box-shadow: 0 0 10px rgba(31, 111, 208, 0.6);
   transition: width 0.45s var(--ease);
 }
 
@@ -1549,7 +1549,7 @@ ol {
   content: "";
   position: absolute;
   inset: -1px;
-  background: radial-gradient(360px 160px at 18% 0%, rgba(94, 234, 212, 0.09), transparent 70%);
+  background: radial-gradient(360px 160px at 18% 0%, rgba(31, 111, 208, 0.09), transparent 70%);
   opacity: 0;
   transition: opacity 0.4s var(--ease);
   pointer-events: none;
@@ -1648,7 +1648,7 @@ ol {
   line-height: 0.9;
   letter-spacing: -0.04em;
   color: transparent;
-  -webkit-text-stroke: 1.2px rgba(94, 234, 212, 0.55);
+  -webkit-text-stroke: 1.2px rgba(31, 111, 208, 0.55);
   position: relative;
 }
 
@@ -1657,7 +1657,7 @@ ol {
   position: absolute;
   inset: 0;
   color: transparent;
-  -webkit-text-stroke: 1px rgba(94, 234, 212, 0.16);
+  -webkit-text-stroke: 1px rgba(31, 111, 208, 0.16);
   transform: translate(7px, 7px);
   z-index: -1;
 }
@@ -1688,7 +1688,7 @@ ol {
   position: relative;
   margin-top: clamp(48px, 7vw, 90px);
   border-top: 1px solid var(--line-faint);
-  background: linear-gradient(180deg, transparent, rgba(3, 6, 9, 0.7));
+  background: linear-gradient(180deg, transparent, rgba(223, 234, 247, 0.7));
 }
 
 .footer-inner {
@@ -1795,7 +1795,7 @@ ol {
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(140, 205, 220, 0.22) transparent;
+  scrollbar-color: rgba(24, 70, 116, 0.22) transparent;
 }
 
 *::-webkit-scrollbar {
@@ -1808,14 +1808,14 @@ ol {
 }
 
 *::-webkit-scrollbar-thumb {
-  background: rgba(140, 205, 220, 0.18);
+  background: rgba(24, 70, 116, 0.18);
   border: 3px solid transparent;
   background-clip: padding-box;
   border-radius: 6px;
 }
 
 *::-webkit-scrollbar-thumb:hover {
-  background: rgba(140, 205, 220, 0.32);
+  background: rgba(24, 70, 116, 0.32);
   border: 3px solid transparent;
   background-clip: padding-box;
 }
@@ -1913,7 +1913,7 @@ ol {
     gap: 0;
     margin: 0;
     padding: 6px 0 10px;
-    background: rgba(6, 10, 14, 0.96);
+    background: rgba(243, 249, 255, 0.97);
     border-bottom: 1px solid var(--line);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);

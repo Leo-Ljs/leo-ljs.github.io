@@ -6,12 +6,14 @@
   <title>编辑网盘目录 · Leo 的小站</title>
   <meta name="description" content="可视化编辑网盘目录，导出 data.json 后上传到 GitHub Pages。">
   <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#eaf2fb">
   <link rel="icon" type="image/x-icon" href="/assets/icons/clouddisk.ico">
-  <link rel="stylesheet" href="/assets/css/site.css">
-  <link rel="stylesheet" href="/assets/css/editor.css">
+  <link rel="stylesheet" href="/assets/css/site.css?v=20261114c">
+  <link rel="stylesheet" href="/assets/css/editor.css?v=20261114c">
 </head>
 <body class="editor-page">
   <a class="skip-link" href="#editor-main">跳到编辑区</a>
+  <div class="bg-field" aria-hidden="true"></div>
 
   <svg class="svg-sprite" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
     <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7.5A2.5 2.5 0 0 1 5.5 5H10l2 2h6.5A2.5 2.5 0 0 1 21 9.5v7A2.5 2.5 0 0 1 18.5 19h-13A2.5 2.5 0 0 1 3 16.5z"></path></symbol>
@@ -39,7 +41,7 @@
   <header class="site-header" data-site-header>
     <div class="wrap nav-inner">
       <a class="brand" href="/" aria-label="Leo 的小站首页">
-        <img class="brand-mark" src="/assets/icons/clouddisk.ico" width="44" height="44" alt="" aria-hidden="true">
+        <img class="brand-mark" src="/assets/icons/clouddisk.ico" width="34" height="34" alt="" aria-hidden="true">
         <span class="brand-text">Leo 的小站</span>
       </a>
       <button class="nav-toggle" type="button" data-nav-toggle aria-controls="site-nav" aria-expanded="false" aria-label="打开导航">
@@ -51,7 +53,7 @@
           首页
         </a>
         <a href="/pan/" data-nav="pan" aria-current="page">
-          <img class="nav-icon" src="/assets/icons/clouddisk.ico" width="18" height="18" alt="" aria-hidden="true">
+          <img class="nav-icon" src="/assets/icons/clouddisk.ico" width="14" height="14" alt="" aria-hidden="true">
           网盘
         </a>
         <a class="nav-github" href="https://github.com/Leo-Ljs" target="_blank" rel="noopener noreferrer">
@@ -345,8 +347,8 @@
     </footer>
   </dialog>
 
-  <script src="/assets/js/pan-data.js"></script>
-  <script src="/assets/js/site.js"></script>
-  <script src="/assets/js/pan-editor.js"></script>
+  <script src="/assets/js/pan-data.js?v=20261114c"></script>
+  <script src="/assets/js/site.js?v=20261114c"></script>
+  <script src="/assets/js/pan-editor.js?v=20261114c"></script>
 </body>
 </html>

@@ -335,7 +335,7 @@ a.pan-crumb:hover {
 
 .pan-search:focus-within {
   border-color: var(--mint);
-  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.42);
+  box-shadow: 0 0 0 3px rgba(31, 111, 208, 0.16);
 }
 
 .pan-search .icon {
@@ -392,7 +392,7 @@ a.pan-crumb:hover {
 
 .pan-icon-btn:hover {
   color: var(--mint-deep);
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(21, 61, 102, 0.06);
 }
 
 .pan-icon-btn#pan-sort-dir .icon {
@@ -691,7 +691,7 @@ button.pan-entry-name:hover {
 
 .pan-entry-action-icon:hover {
   color: var(--mint-deep);
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(21, 61, 102, 0.06);
 }
 
 /* 网格视图 */
@@ -714,7 +714,7 @@ button.pan-entry-name:hover {
 
 .pan-entries.is-grid .pan-entry:hover {
   border-color: var(--line-strong);
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 10px 24px rgba(21, 61, 102, 0.16);
   transform: translateY(-1px);
 }
 
@@ -796,11 +796,11 @@ button.pan-entry-name:hover {
   border-radius: var(--radius-md);
   background: var(--surface);
   color: var(--ink);
-  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.42);
+  box-shadow: 0 28px 80px rgba(31, 111, 208, 0.16);
 }
 
 .file-dialog::backdrop {
-  background: rgba(94, 234, 212, 0.34);
+  background: rgba(31, 111, 208, 0.34);
   backdrop-filter: blur(3px);
 }
 
@@ -1018,7 +1018,7 @@ button.pan-entry-name:hover {
     border-radius: 0 var(--radius-md) var(--radius-md) 0;
     transform: translateX(-104%);
     transition: transform 0.22s ease;
-    box-shadow: 22px 0 60px rgba(0, 0, 0, 0.42);
+    box-shadow: 22px 0 60px rgba(31, 111, 208, 0.16);
   }
 
   body.pan-side-open .pan-side {
@@ -1039,7 +1039,7 @@ button.pan-entry-name:hover {
     z-index: 80;
     padding: 0;
     border: 0;
-    background: rgba(94, 234, 212, 0.28);
+    background: rgba(31, 111, 208, 0.28);
     backdrop-filter: blur(2px);
     cursor: pointer;
   }

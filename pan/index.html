@@ -5,16 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>网盘 · Leo 的小站</title>
   <meta name="description" content="Leo 的网盘目录：用文件资源管理器的方式浏览资料，所有文件都通过外部网盘链接下载。">
-  <meta name="theme-color" content="#f3faf7">
+  <meta name="theme-color" content="#eaf2fb">
   <meta property="og:title" content="网盘 · Leo 的小站">
   <meta property="og:description" content="一个清爽的在线目录，文件只走外链。">
   <meta property="og:type" content="website">
   <link rel="icon" type="image/x-icon" href="/assets/icons/clouddisk.ico">
-  <link rel="stylesheet" href="/assets/css/site.css">
-  <link rel="stylesheet" href="/assets/css/pan.css">
+  <link rel="stylesheet" href="/assets/css/site.css?v=20261114c">
+  <link rel="stylesheet" href="/assets/css/pan.css?v=20261114c">
 </head>
 <body class="pan-page">
   <a class="skip-link" href="#main">跳到主要内容</a>
+  <div class="bg-field" aria-hidden="true"></div>
 
   <svg class="svg-sprite" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
     <symbol id="i-folder" viewBox="0 0 24 24">
@@ -98,7 +99,7 @@
   <header class="site-header" data-site-header>
     <div class="wrap nav-inner">
       <a class="brand" href="/" aria-label="Leo 的小站，回到首页">
-        <img class="brand-mark" src="/assets/icons/clouddisk.ico" width="44" height="44" alt="" aria-hidden="true">
+        <img class="brand-mark" src="/assets/icons/clouddisk.ico" width="34" height="34" alt="" aria-hidden="true">
         <span class="brand-text">Leo 的小站</span>
       </a>
       <button class="nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="site-nav" aria-label="打开菜单">
@@ -110,7 +111,7 @@
           首页
         </a>
         <a href="/pan/" data-nav="pan" aria-current="page">
-          <img class="nav-icon" src="/assets/icons/clouddisk.ico" width="18" height="18" alt="" aria-hidden="true">
+          <img class="nav-icon" src="/assets/icons/clouddisk.ico" width="14" height="14" alt="" aria-hidden="true">
           网盘
         </a>
         <a class="nav-github" href="https://github.com/Leo-Ljs" target="_blank" rel="noopener noreferrer">
@@ -175,7 +176,7 @@
             <div class="pan-tools">
               <label class="pan-search" for="pan-search">
                 <svg class="icon" aria-hidden="true"><use href="#i-search"></use></svg>
-                <input class="pan-search-input" id="pan-search" type="search" placeholder="搜索文件与文件夹" autocomplete="off">
+                <input class="pan-search-input" id="pan-search" type="search" placeholder="搜索文件" autocomplete="off">
               </label>
 
               <label class="pan-select-wrap">
@@ -294,7 +295,7 @@
     <div class="wrap footer-inner">
       <div class="footer-brand">
         <a class="brand" href="/">
-          <img class="brand-mark" src="/assets/icons/clouddisk.ico" width="44" height="44" alt="" aria-hidden="true">
+          <img class="brand-mark" src="/assets/icons/clouddisk.ico" width="34" height="34" alt="" aria-hidden="true">
           <span class="brand-text">Leo 的小站</span>
         </a>
         <p>一个慢慢长大的个人角落。如果这里刚好有你需要的东西，就拿去吧。</p>
@@ -312,8 +313,8 @@
   </footer>
 
   <div class="toast-stack" aria-live="polite" aria-atomic="false"></div>
-  <script src="/assets/js/pan-data.js"></script>
-  <script src="/assets/js/pan-app.js"></script>
-  <script src="/assets/js/site.js"></script>
+  <script src="/assets/js/pan-data.js?v=20261114c"></script>
+  <script src="/assets/js/pan-app.js?v=20261114c"></script>
+  <script src="/assets/js/site.js?v=20261114c"></script>
 </body>
 </html>
