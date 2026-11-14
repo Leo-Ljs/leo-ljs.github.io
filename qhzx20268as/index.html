@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#1e64d2">
 <meta name="robots" content="noindex, nofollow">
-<title>清华中学2026年888上期中成绩查询</title>
+<title>清华中学2026年八年级上期中成绩查询</title>
 <link rel="icon" href="/favicon.ico">
 <style>
     *, *::before, *::after { box-sizing: border-box; }
@@ -90,14 +90,16 @@
     .mock-nav .mock-dots { display: inline-flex; align-items: center; gap: 3px; padding: 0 9px; }
     .mock-nav .mock-dots i { width: 4px; height: 4px; border-radius: 50%; background: #111; }
     .mock-nav .mock-sep { display: block; width: 1px; height: 17px; background: rgba(0, 0, 0, .14); }
-    .mock-nav .mock-close { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; }
+    .mock-nav .mock-close { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; padding: 0; border: 0; background: none; pointer-events: auto; cursor: pointer; -webkit-tap-highlight-color: transparent; }
     .mock-nav .mock-close b { position: relative; display: block; width: 20px; height: 20px; border: 3px solid #111; border-radius: 50%; }
     .mock-nav .mock-close b::after { content: ""; position: absolute; left: 50%; top: 50%; width: 8px; height: 8px; margin: -4px 0 0 -4px; border-radius: 50%; background: #111; }
     #view-query { flex: 1 1 auto; display: flex; flex-direction: column; }
     .mock-share { margin-top: auto; display: flex; justify-content: center; align-items: center; padding: 20px 12px 8px; background: #fff; color: #2e7bd6; font-size: 15px; }
     .mock-share span + span::before { content: "|"; margin: 0 14px; color: #c9d9ea; }
     .mock-credit { margin: 0; padding: 6px 18px calc(22px + env(safe-area-inset-bottom)); background: #fff; color: #9a9a9a; font-size: 13px; text-align: center; }
-    .mock-credit .logo { display: inline-block; width: 14px; height: 14px; margin: 0 2px -2px 2px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #8fd0ff, #2f7fe0 70%); }
+    .yh-logo { display: inline-block; width: 30px; height: 30px; margin: 0 4px -8px 4px; border-radius: 50%; object-fit: contain; vertical-align: baseline; }
+    .mock-toolbar .tb-left .yh-logo { flex: 0 0 auto; width: 30px; height: 30px; margin: 0; }
+    .mock-toolbar .tb-left { gap: 6px; }
     .mock-credit b { color: #333; font-weight: 600; }
     .mock-credit em { font-style: normal; color: #07c160; }
     .mock-toolbar { display: none; position: fixed; left: 50%; bottom: 0; z-index: 30; width: 100%; max-width: 640px; transform: translateX(-50%);
@@ -105,7 +107,7 @@
     #view-result:not(.is-hidden) .mock-toolbar { display: flex; }
     #view-result:not(.is-hidden) { padding-bottom: 82px; }
     .mock-toolbar .tb-left { flex: 1 1 auto; display: flex; align-items: center; gap: 5px; color: #2e7bd6; font-size: 13px; }
-    .mock-toolbar .tb-left i { width: 13px; height: 13px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #8fd0ff, #2f7fe0 70%); }
+
     .mock-toolbar .tb-lock { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 3px; color: #666; font-size: 10px; }
     .mock-toolbar .tb-lock b { position: relative; width: 15px; height: 12px; border: 2px solid #555; border-radius: 2px; }
     .mock-toolbar .tb-lock b::before { content: ""; position: absolute; left: 50%; top: -8px; width: 9px; height: 9px; margin-left: -4.5px; border: 2px solid #555; border-bottom: 0; border-radius: 6px 6px 0 0; }
@@ -114,9 +116,9 @@
 </head>
 <body>
 <main class="app">
-  <nav class="mock-nav"><button class="mock-back" id="mock-back" type="button" aria-label="返回"></button><span class="mock-title">清华中学2026年888上期中成绩查询</span><span class="mock-actions" aria-hidden="true"><span class="mock-dots"><i></i><i></i><i></i></span><span class="mock-sep"></span><span class="mock-close"><b></b></span></span></nav>
+  <nav class="mock-nav"><button class="mock-back" id="mock-back" type="button" aria-label="返回"></button><span class="mock-title">清华中学2026年八年级上期中成绩查询</span><span class="mock-actions"><span class="mock-dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="mock-sep" aria-hidden="true"></span><button class="mock-close" id="mock-close" type="button" aria-label="关闭"><b aria-hidden="true"></b></button></span></nav>
   <section id="view-query">
-    <header class="banner"><h1>清华中学2026年888上期中成绩查询</h1></header>
+    <header class="banner"><h1>清华中学2026年八年级上期中成绩查询</h1></header>
     <p class="tip">姓名要与名单一致，才能查到本次期中考试成绩</p>
     <form id="query-form" autocomplete="off" novalidate>
       <div class="field">
@@ -141,7 +143,7 @@
     </details>
     <footer class="foot">成绩仅本人查看，请勿截图外传</footer>
     <div class="mock-share" aria-hidden="true"><span>分享好友</span><span>我的保存</span><span>订阅通知</span></div>
-    <p class="mock-credit" aria-hidden="true">本查询使用<span class="logo"></span><b>易查分</b> 制作，<em>免费制作查询 &gt;</em></p>
+    <p class="mock-credit" aria-hidden="true">本查询使用<img class="yh-logo" src="./yichafen-logo-192x192.png" alt=""><b>易查分</b> 制作，<em>免费制作查询 &gt;</em></p>
   </section>
 
   <section id="view-result" class="result is-hidden">
@@ -151,10 +153,10 @@
     </table>
     <p class="contact">对成绩有疑问请与老师联系。</p>
     <p class="again"><a href="#" id="again">查询其他同学的成绩</a></p>
-    <div class="mock-toolbar" aria-hidden="true"><span class="tb-left"><i></i>发成绩用易查分</span><span class="tb-lock"><b></b>锁定</span><span class="tb-save">保存</span></div>
+    <div class="mock-toolbar" aria-hidden="true"><span class="tb-left"><img class="yh-logo" src="./yichafen-logo-192x192.png" alt="">发成绩用易查分</span><span class="tb-lock"><b></b>锁定</span><span class="tb-save">保存</span></div>
   </section>
 </main>
 <script src="./scores.js?v=20261114b"></script>
-<script src="./query.js?v=20261114c"></script>
+<script src="./query.js?v=20261114d"></script>
 </body>
 </html>

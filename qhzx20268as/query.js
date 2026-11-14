@@ -195,4 +195,16 @@ function sha256Hex(str) {
       window.location.href = "../";
     });
   }
+
+  var mockClose = document.getElementById("mock-close");
+  if (mockClose) {
+    mockClose.addEventListener("click", function (event) {
+      event.preventDefault();
+      try { window.close(); } catch (err) {}
+      window.setTimeout(function () {
+        if (window.closed) return;
+        window.location.href = "../";
+      }, 160);
+    });
+  }
 })();
