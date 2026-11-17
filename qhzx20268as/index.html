@@ -112,6 +112,11 @@
     .mock-toolbar .tb-lock b { position: relative; width: 15px; height: 12px; border: 2px solid #555; border-radius: 2px; }
     .mock-toolbar .tb-lock b::before { content: ""; position: absolute; left: 50%; top: -8px; width: 9px; height: 9px; margin-left: -4.5px; border: 2px solid #555; border-bottom: 0; border-radius: 6px 6px 0 0; }
     .mock-toolbar .tb-save { flex: 0 0 auto; display: flex; align-items: center; height: 34px; padding: 0 18px; border-radius: 4px; background: #07c160; color: #fff; font-size: 15px; letter-spacing: .04em; }
+    .warn-mask { position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; padding: 24px 20px; background: rgba(0, 0, 0, .5); }
+    .warn-mask.is-hidden { display: none; }
+    .warn-card { width: 100%; max-width: 330px; padding: 26px 22px 20px; background: #fff; border-radius: 10px; box-shadow: 0 12px 40px rgba(0, 0, 0, .28); text-align: center; }
+    .warn-card h2 { margin: 0 0 18px; color: #e02424; font-size: clamp(20px, 5.8vw, 26px); font-weight: 800; line-height: 1.55; letter-spacing: .02em; }
+    .warn-card .warn-ok { display: block; width: 100%; height: 46px; border: 0; border-radius: 4px; background: #07c160; color: #fff; font-size: 16px; letter-spacing: .06em; cursor: pointer; -webkit-tap-highlight-color: transparent; }
 </style>
 </head>
 <body>
@@ -156,7 +161,13 @@
     <div class="mock-toolbar" aria-hidden="true"><span class="tb-left"><img class="yh-logo" src="./yichafen-logo-192x192.png" alt="">发成绩用易查分</span><span class="tb-lock"><b></b>锁定</span><span class="tb-save">保存</span></div>
   </section>
 </main>
+<div class="warn-mask" id="warn-mask" role="dialog" aria-modal="true" aria-labelledby="warn-title">
+  <div class="warn-card">
+    <h2 id="warn-title">本网站为仿冒网站，成绩为模拟数据生成，仅供参考，请勿当真</h2>
+    <button class="warn-ok" id="warn-ok" type="button">我知道了</button>
+  </div>
+</div>
 <script src="./scores.js?v=20261114b"></script>
-<script src="./query.js?v=20261114d"></script>
+<script src="./query.js?v=20261114f"></script>
 </body>
 </html>

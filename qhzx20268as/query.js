@@ -196,6 +196,19 @@ function sha256Hex(str) {
     });
   }
 
+  var warnMask = document.getElementById("warn-mask");
+  if (warnMask) {
+    var warnOk = document.getElementById("warn-ok");
+    var dismissWarn = function () { warnMask.classList.add("is-hidden"); };
+    if (warnOk) warnOk.addEventListener("click", dismissWarn);
+    warnMask.addEventListener("click", function (event) {
+      if (event.target === warnMask) dismissWarn();
+    });
+    document.addEventListener("keydown", function (event) {
+      if (event.key === "Escape") dismissWarn();
+    });
+  }
+
   var mockClose = document.getElementById("mock-close");
   if (mockClose) {
     mockClose.addEventListener("click", function (event) {
